@@ -233,23 +233,24 @@ public class ObjectList {
 //    	System.out.println("Event Source : " + event.getSource());
 //    	System.out.println("Event Target : " + event.getTarget());
     	if(event.getButton() == MouseButton.PRIMARY) {
-    		System.out.println(event.getClickCount());
-    		if(event.getClickCount() == 2) {
-    			showObjectText();
-    		} else if(event.getClickCount()==1 || !event.getTarget().getClass().getSimpleName().equalsIgnoreCase("TableColumnHeader")) {
+    		if(event.getTarget().getClass().getSimpleName().equalsIgnoreCase("CheckBoxTableCell") ) {
+    			//event.getTarget().getClass().getSimpleName().equalsIgnoreCase("TableColumnHeader")
+    			//System.out.println(event.getTarget().getClass().getSimpleName());
     			chagneCheckStatus();
+        	} else if(event.getClickCount() == 2) {
+        		showObjectText();
         	}
         	
     	} else if(event.getButton() == MouseButton.SECONDARY) {
     		ContextMenu contextMenu = new ContextMenu();
-    		MenuItem menuItem1 = new MenuItem("Show Text");
+    		MenuItem menuItem1 = new MenuItem("View Source");
     		MenuItem menuItem2 = new MenuItem("Check All");
     		MenuItem menuItem3 = new MenuItem("UnCheck All");
     		menuItem1.setOnAction(
     			new EventHandler<ActionEvent>() {
     				@Override
     				public void handle(ActionEvent event ) {
-    					showObjectText();
+    					showObjectTextEx();
     				}
     			}
     		);
@@ -310,7 +311,30 @@ public class ObjectList {
 			_mainApp.showViewSourceDialog(strText);
 		}
     }
-    
+
+    private void showObjectTextEx() {
+    	ObservableList<String> rowData = _tvObjectList.getSelectionModel().getSelectedItem();
+		String sOwner;
+		String sDB = rowData.get(2);
+		String sObjectName = rowData.get(3).toUpperCase();
+		String sObjectType = rowData.get(1).toUpperCase();
+		if (sDB.equalsIgnoreCase("ORACLE")) {
+			sOwner = "DBENURI";
+			//DBObjectWork dbo = new DBObjectWork(DBMS_TYPE.ORACLE, "jdbc:oracle:thin:@//xxx.xxx.xxx.xxx:prot/dbname", "user","pass");
+			DBObjectWork dbo = new DBObjectWork("ENURI_TEST");
+			String strText = dbo.getOracleText(sOwner, sObjectName, sObjectType);
+			dbo.closeAll();
+			_mainApp.showViewSourceExDialog(strText);
+		}
+		else if(sDB.equalsIgnoreCase("MS-SQL")) {
+			sOwner = "ELOC2001";
+			//DBObjectWork dbo = new DBObjectWork(DBMS_TYPE.MSSQL, "jdbc:sqlserver://x.x.x.x:port;instanceName=xx;databaseName=xx;", "user","pass");
+			DBObjectWork dbo = new DBObjectWork("MPDB_TEST");
+			String strText = dbo.getMSSQLText("ELOC2001", "dbo", sObjectName, sObjectType);
+			dbo.closeAll();
+			_mainApp.showViewSourceExDialog(strText);
+		}
+    }
     private void chagneCheckStatus() {
     	ObservableList<String> rowData = _tvObjectList.getSelectionModel().getSelectedItem();
         rowData.set(0, String.valueOf(!Boolean.valueOf(rowData.get(0))));

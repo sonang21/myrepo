@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import bts.app.view.ObjectList;
 import bts.app.view.ViewSource;
+import bts.app.view.ViewSourceEx;
 import javafx.application.Application;
 import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
@@ -120,20 +121,47 @@ public class Main extends Application {
 	        Scene scene = new Scene(page);
 	        dialogStage.setScene(scene);
 
-	        // person을 컨트롤러에 설정한다.
 	        ViewSource controller = loader.getController();
 	        controller.setDialogStage(dialogStage);
 	        controller.setText(strText);
 	        
 	        // 다이얼로그를 보여주고 사용자가 닫을 때까지 기다린다.
 	        dialogStage.showAndWait();
-//	        dialogStage.show();
 
 	    } catch (IOException e) {
 	        e.printStackTrace();
 	    }
 	}
 	
+	public void showViewSourceExDialog(String strText) {
+	    try {
+	        // fxml 파일을 로드하고 나서 새로운 스테이지를 만든다.
+	        FXMLLoader loader = new FXMLLoader();
+	        loader.setLocation(Main.class.getResource("view/ViewSourceEx.fxml"));
+	        BorderPane page = (BorderPane) loader.load();
+
+	        // 다이얼로그 스테이지를 만든다.
+	        Stage dialogStage = new Stage();
+	        dialogStage.setTitle("Source View");
+	        dialogStage.initModality(Modality.WINDOW_MODAL);
+	        dialogStage.initOwner(_stage);
+	        Scene scene = new Scene(page);
+	        dialogStage.setScene(scene);
+
+	        // person을 컨트롤러에 설정한다.
+	        ViewSourceEx controller = loader.getController();
+	        controller.setDialogStage(dialogStage);
+	        controller.setText(strText);
+	        
+	        // 다이얼로그를 보여주고 사용자가 닫을 때까지 기다린다.
+	        dialogStage.showAndWait();
+	        //dialogStage.show();
+
+	    } catch (IOException e) {
+	        e.printStackTrace();
+	    }
+	}
+
 	public Stage getPrimaryStage() {
 		return _stage;
 	}
