@@ -1,0 +1,126 @@
+/* *************************************************************************
+ * NAME : dbo.UDP_BC_BOARD_READ
+ * TYPE : PROCEDURE (SQL_STORED_PROCEDURE)
+ * TIME : Create: 2004-11-02 03:31:53.92
+ *        Modify: 2018-05-03 17:23:35.05
+ *        Backup: 20180521_1737
+ ************************************************************************* */
+
+
+
+/****** 개체: 저장 프로시저 dbo.UP_BC_BOARD_READ    스크립트 날짜: 2004-10-23 오전 10:56:15 ******/
+
+/****** 개체: 저장 프로시저 dbo.UP_BC_BOARD_READ    스크립트 날짜: 2004-07-07 오후 3:44:38 ******/
+
+/****** 개체: 저장 프로시저 dbo.UP_BC_BOARD_READ    스크립트 날짜: 2004-07-07 오후 1:04:54 ******/
+
+/****** 개체: 저장 프로시저 dbo.UP_BC_BOARD_READ    스크립트 날짜: 2004-07-07 오전 10:17:09 ******/
+
+/****** 개체: 저장 프로시저 dbo.UP_BC_BOARD_READ    스크립트 날짜: 2004-07-07 오전 8:59:34 ******/
+CREATE      PROC UDP_BC_BOARD_READ
+	@GROUP 	INT,
+	@BB_NO		INT,
+	
+	@REF_WRITER	VARCHAR(12)	OUTPUT
+AS
+BEGIN
+	SET NOCOUNT ON
+	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED
+	
+	
+	
+
+
+
+	UPDATE TBL_BC_BOARD
+	SET BB_HITS = BB_HITS+1
+	WHERE BB_GROUP =@GROUP
+		AND BB_NO= @BB_NO
+		
+
+	DECLARE @REF INT
+	SET @REF = 0
+	SELECT @REF=BB_REF		 
+	FROM TBL_BC_BOARD (NOLOCK)
+	WHERE BB_GROUP=@GROUP
+		AND BB_NO = @BB_NO
+		AND BB_DELFLAG='0'
+	
+	--원문작성자 리턴
+	SET @REF_WRITER=''
+	SELECT @REF_WRITER = BB_USERNAME
+	FROM  TBL_BC_BOARD (NOLOCK)
+	WHERE BB_GROUP=@GROUP
+		AND BB_REF = @REF
+		AND BB_STEP= 0
+		AND BB_DEPTH=0
+		AND BB_DELFLAG='0'
+
+
+	SELECT BB_IDX,
+		BB_GROUP,
+		BB_NO,
+		BB_REF,
+		BB_STEP,
+		BB_DEPTH,
+		BB_USERID,
+		BB_USERNAME,
+		BB_RECEIVER,
+		BB_REFERER,
+		BB_TITLE,
+		BB_CONTENT,
+		BB_REGDATE,
+		BB_HITS,
+		BB_HTML,
+		BB_STATUS,
+		BB_DELFLAG
+	FROM TBL_BC_BOARD (NOLOCK)
+	WHERE BB_GROUP = @GROUP
+		AND BB_NO = @BB_NO
+		AND BB_DELFLAG='0'
+	
+	SELECT BA_IDX,
+		BA_GROUP,
+		BA_NO,
+		BA_FILE,
+		BA_REGDATE
+	FROM TBL_BOARD_ATTACHFILE (NOLOCK)
+	WHERE BA_GROUP = @GROUP
+		AND BA_NO = @BB_NO
+	
+
+
+	
+	SELECT BB_IDX,
+		BB_GROUP,
+		BB_NO,
+		BB_REF,
+		BB_STEP,
+		BB_DEPTH,
+		BB_USERID,
+		BB_USERNAME,
+		BB_RECEIVER,
+		BB_REFERER,
+		BB_TITLE,
+		BB_CONTENT,
+		BB_REGDATE,
+		BB_HITS,
+		BB_HTML,
+		BB_STATUS,
+		BB_DELFLAG
+	FROM TBL_BC_BOARD (NOLOCK)
+	WHERE BB_GROUP  = @GROUP
+		AND BB_REF=@REF
+		AND BB_DELFLAG='0'
+	ORDER BY BB_STEP ASC
+	
+END
+
+--SP_HELP TBL_BC_BOARD
+--SP_HELP TBL_BOARD_ATTACHFILE
+
+
+
+
+
+

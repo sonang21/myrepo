@@ -1,0 +1,56 @@
+/* *************************************************************************
+ * NAME : DBENURI.UDP_DELETE_SHOPPINGNOTE
+ * TYPE : PROCEDURE
+ * TIME : Create: 2018-03-28 18:50:00
+ *        Modify: 2018-03-28 18:50:02
+ *        Backup: 20180521_1739
+ ************************************************************************* */
+
+
+  CREATE OR REPLACE PROCEDURE "DBENURI"."UDP_DELETE_SHOPPINGNOTE" 
+IS
+
+v_modelno TBL_SAVE_PRICELIST.MODELNO%TYPE := 0;
+v_tempid TBL_SAVE_PRICELIST.TEMP_ID%TYPE := ' ';
+
+i_count 				NUMBER := 0;
+i_row				     NUMBER := 0;	  
+
+CURSOR delete_save_pricelist_cursor IS
+	SELECT TBL_SAVE_PRICELIST.TEMP_ID , TBL_SAVE_PRICELIST.MODELNO FROM TBL_SAVE_PRICELIST ,
+	(SELECT  TEMP_ID , MODELNO FROM (
+	SELECT TEMP_ID , MODELNO FROM TBL_SAVE_PRICELIST
+	MINUS
+	SELECT TEMP_ID , MODELNO FROM TBL_TEMP_TODAY_GOODS ) ) A
+	WHERE TBL_SAVE_PRICELIST.TEMP_ID = A.TEMP_ID AND TBL_SAVE_PRICELIST.MODELNO = A.MODELNO AND TBL_SAVE_PRICELIST.MEMBER_ID IS  NULL;
+	
+BEGIN
+	
+OPEN delete_save_pricelist_cursor;
+LOOP
+	FETCH  delete_save_pricelist_cursor INTO v_tempid,v_modelno;
+	EXIT WHEN delete_save_pricelist_cursor%NOTFOUND;	
+
+ 	DELETE  /*+ append NOLOGGING */ TBL_SAVE_PRICELIST WHERE TEMP_ID = v_tempid AND MODELNO = v_modelno;
+    COMMIT;
+     	
+END LOOP;
+CLOSE delete_save_pricelist_cursor;
+COMMIT;
+
+DELETE  /*+ append NOLOGGING */ TBL_SAVE_PRICELIST WHERE visited_date < (SYSDATE - 5) AND MEMBER_ID IS  NULL;
+COMMIT;
+
+--DELETE /*+ append NOLOGGING */ FROM (
+--SELECT * FROM TBL_SAVE_PRICELIST ,  
+--(SELECT TEMP_ID , MODELNO  FROM TBL_TEMP_TODAY_GOODS WHERE REG_DATE < (SYSDATE - 7) ) A
+--WHERE TBL_SAVE_PRICELIST.TEMP_ID = A.TEMP_ID AND TBL_SAVE_PRICELIST.MODELNO = A.MODELNO AND TBL_SAVE_PRICELIST.MEMBER_ID IS  NULL
+--);
+--COMMIT;
+
+--DELETE /*+ append NOLOGGING */ TBL_TEMP_TODAY_GOODS WHERE REG_DATE < (SYSDATE - 7);
+
+COMMIT;
+
+END Udp_Delete_Shoppingnote;
+ 

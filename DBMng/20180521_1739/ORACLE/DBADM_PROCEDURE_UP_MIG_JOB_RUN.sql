@@ -1,0 +1,51 @@
+/* *************************************************************************
+ * NAME : DBADM.UP_MIG_JOB_RUN
+ * TYPE : PROCEDURE
+ * TIME : Create: 2018-04-18 12:26:11
+ *        Modify: 2018-04-18 12:58:15
+ *        Backup: 20180521_1739
+ ************************************************************************* */
+
+
+  CREATE OR REPLACE PROCEDURE "DBADM"."UP_MIG_JOB_RUN" (P_JOB_ID VARCHAR2, P_LOG_GROUP VARCHAR2)
+AUTHID CURRENT_USER
+IS 
+  V_JOB_ID     DBADM.TB_MIG_JOBS.JOB_ID%TYPE := '';
+  V_JOB_GROUP  DBADM.TB_MIG_JOBS.JOB_GROUP%TYPE := '';
+  V_LOG_GROUP  VARCHAR2(20) ;
+  V_LOG_ID     DBADM.TB_MIG_LOG.LOG_ID%TYPE;
+  V_SID        NUMBER;
+  -- V_ERRMSG     VARCHAR2(1000);
+BEGIN
+    V_LOG_GROUP := P_LOG_GROUP||'('||TO_CHAR(SYS_CONTEXT('USERENV','SID'))||')';
+    V_JOB_ID    := P_JOB_ID;
+    
+    DBADM.PG_MIG.SET_LOG_GROUP(P_LOG_GROUP=>V_LOG_GROUP);
+    FOR ICUR IN (SELECT * FROM DBADM.TB_MIG_JOBS WHERE JOB_ID LIKE V_JOB_ID)
+    LOOP
+        DBMS_OUTPUT.ENABLE(1000000);
+        DBMS_OUTPUT.PUT_LINE('------------------------------------------------------');
+        DBMS_OUTPUT.PUT_LINE(SUBSTR(ICUR.CMD_SQL, 1, 1000000));
+        -- ## LOG START
+        DBADM.PG_MIG.SP_LOG_CREATE(P_JOB_NAME=>ICUR.JOB_NM, P_JOB_ID=>ICUR.JOB_ID, P_TARGET_TABLE=>ICUR.TARGET_TBL, P_SOURCE_TABLE=>ICUR.SOURCE_TBL);
+        DBADM.PG_MIG.SP_LOG_START(P_SOURCE_CNT=>1, P_TARGET_CNT=>1);
+        V_LOG_ID := DBADM.PG_MIG.GET_LOG_ID();
+        
+        UPDATE DBADM.TB_MIG_JOBS SET RUN_STAT='RUNNING', LOG_ID = V_LOG_ID WHERE JOB_ID = ICUR.JOB_ID;
+        
+        BEGIN 
+            -- ## CMD EXECUTE 
+            EXECUTE IMMEDIATE ICUR.CMD_SQL;
+            -- ## LOG END
+            DBADM.PG_MIG.SP_LOG_END(P_RESULT_CNT=>1);
+            UPDATE DBADM.TB_MIG_JOBS SET RUN_STAT = 'SUCCESS' WHERE JOB_ID = ICUR.JOB_ID;
+            COMMIT;
+        EXCEPTION WHEN OTHERS THEN
+            DBADM.PG_MIG.SP_LOG_END(-1, 'ERROR', SQLCODE, SQLERRM);
+            UPDATE DBADM.TB_MIG_JOBS SET RUN_STAT = 'ERROR' WHERE JOB_ID = ICUR.JOB_ID;
+            COMMIT;
+            -- RAISE;
+        END;
+    END LOOP;
+    
+END;

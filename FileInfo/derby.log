@@ -1,0 +1,13 @@
+----------------------------------------------------------------
+Thu Feb 01 09:31:15 KST 2018:
+ 클래스 로더 sun.misc.Launcher$AppClassLoader@19821f이(가) 있는 데이터베이스 디렉토리 C:\2.MyDev\FileInfo\filedb에서 
+ Derby 버전 The Apache Software Foundation - Apache Derby - 10.12.1.1 - (1704137): 인스턴스 a816c00e-0161-4ec6-4ff9-000000d080d8 부팅 중 
+file:/C:/2.MyDev/FileInfo/Derby/lib/derby.jar에서 로드됨
+java.vendor=Sun Microsystems Inc.
+java.runtime.version=1.6.0_24-b07
+user.dir=C:\2.MyDev\FileInfo
+os.name=Windows NT (unknown)
+os.arch=x86
+os.version=6.2
+derby.system.home=null
+데이터베이스 클래스 로더가 시작됨 - derby.database.classpath=''

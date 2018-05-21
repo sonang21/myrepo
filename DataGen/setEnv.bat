@@ -1,0 +1,1 @@
+REM SET CLASSPATH=lib\ojdbc6.jar;bmt_data;.

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.BorderPane?>
+
+<AnchorPane prefHeight="400.0" prefWidth="709.0" xmlns="http://javafx.com/javafx/9.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="sq.view.SimpleQuery">
+   <children>
+      <SplitPane fx:id="_splitPane1" dividerPositions="0.25" layoutX="82.0" layoutY="104.0" prefHeight="400.0" prefWidth="600.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+        <items>
+          <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="398.0" prefWidth="273.0">
+               <children>
+                  <TableView fx:id="_objectList" layoutX="-41.0" onMouseClicked="#onClickObjectList" prefHeight="398.0" prefWidth="127.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                    <columns>
+                        <TableColumn fx:id="_checkColumn" prefWidth="31.0" text="C" />
+                        <TableColumn fx:id="_ownerColumn" prefWidth="83.0" text="Owner" />
+                      <TableColumn fx:id="_nameColumn" prefWidth="117.0" text="Name" />
+                      <TableColumn fx:id="_typeColumn" minWidth="9.0" prefWidth="70.0" text="Type" />
+                    </columns>
+                  </TableView>
+               </children></AnchorPane>
+          <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="398.0" prefWidth="359.0">
+               <children>
+                  <SplitPane dividerPositions="0.4" layoutX="75.0" layoutY="90.0" orientation="VERTICAL" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                    <items>
+                      <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="114.0" prefWidth="464.0">
+                           <children>
+                              <BorderPane layoutX="32.0" layoutY="-50.0" prefHeight="150.4" prefWidth="464.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                 <bottom>
+                                    <Button mnemonicParsing="false" onAction="#onButtonExecute" text="Execute" BorderPane.alignment="BOTTOM_RIGHT" />
+                                 </bottom>
+                                 <top>
+                                    <Label text="Query SQL" BorderPane.alignment="TOP_LEFT" />
+                                 </top>
+                                 <center>
+                                    <TextArea fx:id="_textSql" prefHeight="101.0" prefWidth="464.0" BorderPane.alignment="CENTER" />
+                                 </center>
+                              </BorderPane>
+                           </children>
+                        </AnchorPane>
+                      <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="254.0" prefWidth="428.0">
+                           <children>
+                              <TableView fx:id="_queryResult" layoutX="88.0" layoutY="22.0" prefHeight="244.0" prefWidth="464.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                <columns>
+                                  <TableColumn prefWidth="75.0" text="C1" />
+                                  <TableColumn prefWidth="75.0" text="C2" />
+                                </columns>
+                              </TableView>
+                           </children></AnchorPane>
+                    </items>
+                  </SplitPane>
+               </children>
+            </AnchorPane>
+        </items>
+      </SplitPane>
+   </children>
+</AnchorPane>

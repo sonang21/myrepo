@@ -1,0 +1,101 @@
+
+[2014/12/05 12:21:15.749, DEBUG: com.cslee.db.dbpool.DBConnectionPoolManager.loadDriver(DBConnectionPoolManager.java:129)]
+Registered JDBC Driver : oracle.jdbc.OracleDriver, ./lib/ojdbc6.jar
+
+[2014/12/05 12:21:16.045, DEBUG: com.cslee.db.dbpool.DBConnectionPool.newConnection(DBConnectionPool.java:164)]
+Created a new connection in pool DQMS
+
+[2014/12/05 12:21:16.045, DEBUG: com.cslee.db.dbpool.DBConnectionPoolManager.createPools(DBConnectionPoolManager.java:72)]
+Pool was created :DQMS
+
+[2014/12/05 12:21:16.045, DEBUG: com.cslee.dqm.DBWork.runSQL(DBWork.java:168)]
+SELECT RULE_ID, RULE_TYPE, LCLS_NM, MCLS_NM, TGT_DB_NM, TGT_TAB_NM, TGT_COL_NM      , TGT_TAB_KO_NM, TGT_COL_KO_NM, CMP_DB_NM, CMP_TAB_NM, CMP_TAB_KO_NM           , RULE_DFN, VRFY_DFN, ERR_PROC_DFN, DB_N1_CONN_NM, RULE_N1_SQL                 , DB_N2_CONN_NM, RULE_N2_SQL, ERR_SAV_TAB_NM, CYCLE                        FROM TB_DQM_RULES2  WHERE USE_YN = 'Y' AND RULE_ID LIKE 'ETHW0001' ORDER BY RULE_ID
+
+[2014/12/05 12:21:16.155, DEBUG: com.cslee.db.dbpool.DBConnectionPoolManager.loadDriver(DBConnectionPoolManager.java:112)]
+loadDriver: [oracle.jdbc.OracleDriver] is already registered, DriverFile = ./lib/ojdbc6.jar
+
+[2014/12/05 12:21:16.248, DEBUG: com.cslee.db.dbpool.DBConnectionPool.newConnection(DBConnectionPool.java:164)]
+Created a new connection in pool DQMS
+
+[2014/12/05 12:21:16.248, DEBUG: com.cslee.db.dbpool.DBConnectionPoolManager.createPools(DBConnectionPoolManager.java:72)]
+Pool was created :DQMS
+
+[2014/12/05 12:21:16.342, DEBUG: com.cslee.db.dbpool.DBConnectionPool.newConnection(DBConnectionPool.java:164)]
+Created a new connection in pool DQMS
+
+[2014/12/05 12:21:16.404, DEBUG: com.cslee.db.dbpool.DBConnectionPoolManager.freeConnection(DBConnectionPoolManager.java:41)]
+One connection of DQMS was freed.
+
+[2014/12/05 12:21:16.451, DEBUG: com.cslee.db.dbpool.DBConnectionPoolManager.freeConnection(DBConnectionPoolManager.java:41)]
+One connection of DQMS was freed.
+
+[2014/12/05 12:21:16.482, DEBUG: com.cslee.db.dbpool.DBConnectionPoolManager.loadDriver(DBConnectionPoolManager.java:129)]
+Registered JDBC Driver : com.mysql.jdbc.Driver, ./lib/mysql-connector-java.jar
+
+[2014/12/05 12:21:16.779, DEBUG: com.cslee.db.dbpool.DBConnectionPool.newConnection(DBConnectionPool.java:164)]
+Created a new connection in pool RESPVAL
+
+[2014/12/05 12:21:16.779, DEBUG: com.cslee.db.dbpool.DBConnectionPoolManager.createPools(DBConnectionPoolManager.java:72)]
+Pool was created :RESPVAL
+
+[2014/12/05 12:21:16.810, DEBUG: com.cslee.db.dbpool.DBConnectionPoolManager.freeConnection(DBConnectionPoolManager.java:41)]
+One connection of RESPVAL was freed.
+
+[2014/12/05 12:21:16.841, DEBUG: com.cslee.db.dbpool.DBConnectionPoolManager.loadDriver(DBConnectionPoolManager.java:112)]
+loadDriver: [com.mysql.jdbc.Driver] is already registered, DriverFile = ./lib/mysql-connector-java.jar
+
+[2014/12/05 12:21:16.857, DEBUG: com.cslee.db.dbpool.DBConnectionPool.newConnection(DBConnectionPool.java:164)]
+Created a new connection in pool RESPVAL
+
+[2014/12/05 12:21:16.857, DEBUG: com.cslee.db.dbpool.DBConnectionPoolManager.createPools(DBConnectionPoolManager.java:72)]
+Pool was created :RESPVAL
+
+[2014/12/05 12:21:16.857, DEBUG: com.cslee.db.dbpool.DBConnectionPoolManager.freeConnection(DBConnectionPoolManager.java:41)]
+One connection of RESPVAL was freed.
+
+[2014/12/05 12:21:16.888, DEBUG: com.cslee.db.dbpool.DBConnectionPoolManager.freeConnection(DBConnectionPoolManager.java:41)]
+One connection of DQMS was freed.
+
+[2014/12/05 12:21:16.935, DEBUG: com.cslee.db.dbpool.DBConnectionPoolManager.loadDriver(DBConnectionPoolManager.java:129)]
+Registered JDBC Driver : org.apache.hive.jdbc.HiveDriver, ./lib/hive/hive-jdbc-0.11.0-nr1012.jar
+
+[2014/12/05 12:21:59.491, DEBUG: com.cslee.db.dbpool.DBConnectionPool.newConnection(DBConnectionPool.java:173)]
+Cant't create a new connection for NDAP, URL: jdbc:hive2://10.59.49.28:10000/default, USER: ndap
+
+[2014/12/05 12:21:59.491, ERROR: com.cslee.db.dbpool.DBConnectionPool.newConnection(DBConnectionPool.java:174)]
+ERROR :Could not establish connection to jdbc:hive2://10.59.49.28:10000/default: java.net.ConnectException: Connection timed out: connect
+java.sql.SQLException: Could not establish connection to jdbc:hive2://10.59.49.28:10000/default: java.net.ConnectException: Connection timed out: connect
+	at org.apache.hive.jdbc.HiveConnection.<init>(HiveConnection.java:100)
+	at org.apache.hive.jdbc.HiveDriver.connect(HiveDriver.java:104)
+	at java.sql.DriverManager.getConnection(DriverManager.java:582)
+	at java.sql.DriverManager.getConnection(DriverManager.java:185)
+	at com.cslee.db.dbpool.DBConnectionPool.newConnection(DBConnectionPool.java:161)
+	at com.cslee.db.dbpool.DBConnectionPool.<init>(DBConnectionPool.java:79)
+	at com.cslee.db.dbpool.DBConnectionPoolManager.createPools(DBConnectionPoolManager.java:68)
+	at com.cslee.db.dbpool.DBConnectionPoolManager.initialize(DBConnectionPoolManager.java:87)
+	at com.cslee.db.dbpool.DBConnectionManager.<init>(DBConnectionManager.java:43)
+	at com.cslee.dqm.DBWork.<init>(DBWork.java:36)
+	at com.cslee.dqm.DBWork.<init>(DBWork.java:42)
+	at com.cslee.dqm.DBWork.<init>(DBWork.java:48)
+	at com.cslee.dqm.DBWork.<init>(DBWork.java:54)
+	at com.cslee.dqm.DQMain.main(DQMain.java:236)
+Caused by: org.apache.thrift.transport.TTransportException: java.net.ConnectException: Connection timed out: connect
+	at org.apache.thrift.transport.TSocket.open(TSocket.java:185)
+	at org.apache.thrift.transport.TSaslTransport.open(TSaslTransport.java:248)
+	at org.apache.thrift.transport.TSaslClientTransport.open(TSaslClientTransport.java:37)
+	at org.apache.hive.jdbc.HiveConnection.openTransport(HiveConnection.java:206)
+	at org.apache.hive.jdbc.HiveConnection.initialize(HiveConnection.java:117)
+	at org.apache.hive.jdbc.HiveConnection.<init>(HiveConnection.java:93)
+	... 13 more
+Caused by: java.net.ConnectException: Connection timed out: connect
+	at java.net.PlainSocketImpl.socketConnect(Native Method)
+	at java.net.PlainSocketImpl.doConnect(PlainSocketImpl.java:351)
+	at java.net.PlainSocketImpl.connectToAddress(PlainSocketImpl.java:213)
+	at java.net.PlainSocketImpl.connect(PlainSocketImpl.java:200)
+	at java.net.SocksSocketImpl.connect(SocksSocketImpl.java:366)
+	at java.net.Socket.connect(Socket.java:529)
+	at org.apache.thrift.transport.TSocket.open(TSocket.java:180)
+	... 18 more
+
+[2014/12/05 12:21:59.491, DEBUG: com.cslee.db.dbpool.DBConnectionPoolManager.createPools(DBConnectionPoolManager.java:72)]
+Pool was created :NDAP

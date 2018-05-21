@@ -1,0 +1,42 @@
+.keyword {
+    /* @SuppressWarnings  */
+    -fx-fill: blue;
+	/* @SuppressWarnings  */
+    -fx-font-weight: bold;
+}
+.semicolon {
+    /* @SuppressWarnings  */
+    -fx-font-weight: bold;
+}
+.paren {
+	/* @SuppressWarnings  */
+    -fx-fill: firebrick;
+	/* @SuppressWarnings  */
+    -fx-font-weight: bold;
+}
+.bracket {
+    /* @SuppressWarnings  */
+    -fx-fill: darkgreen;
+	/* @SuppressWarnings  */
+    -fx-font-weight: bold;
+}
+.brace {
+    /* @SuppressWarnings  */
+    -fx-fill: teal;
+	/* @SuppressWarnings  */
+    -fx-font-weight: bold;
+}
+.string {
+    /* @SuppressWarnings  */
+    -fx-fill: purple;
+}
+
+.comment {
+    /* @SuppressWarnings  */
+	-fx-fill: cadetblue;
+}
+
+.paragraph-box:has-caret {
+    /* @SuppressWarnings  */
+    -fx-background-color: #f2f9fc;
+}

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<configurations>
+    <connections>
+        <database>
+            <name>ENURI_TEST</name>
+            <version>ORACLE 11gR2</version>
+            <dbms>ORACLE</dbms>
+            <driver>oracle.jdbc.OracleDriver</driver>
+            <driver_file>../../lib/jdbc/oracle/ojdbc6.jar</driver_file>
+            <url>jdbc:oracle:thin:@//1.1.1.1:1521/SID</url>
+            <user>user</user>
+            <pass>passwd_en</pass>
+            <initConn>1</initConn>
+            <maxConn>10</maxConn>
+            <waitSec>30</waitSec>
+            <check_query>select 1 from dual</check_query>
+        </database>
+        <database>
+            <name>MPDB_TEST</name>
+            <version>MS-SQL2014</version>
+            <dbms>mssql</dbms>
+            <driver>com.microsoft.sqlserver.jdbc.SQLServerDriver</driver>
+            <driver_file>../../lib/mssql-jdbc-6.4.0.jre9.jar</driver_file>
+            <url>jdbc:sqlserver://1.1.1.1:1433;instanceName=ins;databaseName=db;</url>
+            <!--
+             <check_query>select rownum, table_name from all_tables where rownum &lt;= 10 </check_query>
+             -->
+            <user>user</user>
+            <pass>passwd_en</pass>
+            <initConn>1</initConn>
+            <maxConn>10</maxConn>
+            <waitSec>30</waitSec>
+            <check_query> select 1 </check_query>
+        </database>
+        <database>
+            <name>Hive</name>
+            <version>hive 0.11.0</version>
+            <dbms>HIVE</dbms>
+            <driver>org.apache.hive.jdbc.HiveDriver</driver>
+            <driver_file>./lib/hive/hive-jdbc-0.11.0-nr1012.jar</driver_file>
+            <url>jdbc:hive2://1.1.1.1:10000/default</url>
+            <check_query>select 1 as hive</check_query>
+            <user>user</user>
+            <pass></pass>
+            <initConn>1</initConn>
+            <maxConn>10</maxConn>
+            <waitSec>30</waitSec>
+            <check_query>select 1 from dual</check_query>
+        </database>
+        
+        <database>
+            <name>MYSQL</name>
+            <version>MYSQL</version>
+            <dbms>MYSQL</dbms>
+            <driver>com.mysql.jdbc.Driver</driver>
+            <driver_file>./lib/mysql-connector-java.jar</driver_file>
+            <url>jdbc:mysql://1.1.1.1:3306/db</url>
+            <user>user</user>
+            <pass>5C989D3A6BB6D314A472CA3535BFFBBB</pass>
+            <initConn>1</initConn>
+            <maxConn>10</maxConn>
+            <waitSec>30</waitSec>
+            <check_query>select 1 as ndap</check_query>
+        </database>
+
+    </connections>
+</configurations>

@@ -1,0 +1,24 @@
+/* *************************************************************************
+ * NAME : dbo.UDP_NB_MODELIN_SELECT_PROC
+ * TYPE : PROCEDURE (SQL_STORED_PROCEDURE)
+ * TIME : Create: 2004-11-02 03:36:35.92
+ *        Modify: 2015-05-15 00:52:25.97
+ *        Backup: 20180521_1737
+ ************************************************************************* */
+
+
+
+-- UDP_NB_MODELIN_SELECT_PROC  :   2004.7.23 --
+CREATE     PROC UDP_NB_MODELIN_SELECT_PROC
+	@szInsCcode INT,
+	@szInsMcode NVARCHAR(400)
+AS
+	SET NOCOUNT ON
+	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED
+		SELECT NBMI_NO ,NBMO_GOODSNM 
+		FROM TBL_NB_MODEL_IN WITH (READUNCOMMITTED) 
+		INNER JOIN TBL_NB_MODEL_OUT WITH (READUNCOMMITTED) ON NBMI_NO = NBMO_NBMI 
+		WHERE NBMI_VCODE = @szInsCcode AND NBMI_GOODSNM = @szInsMcode
+	SET NOCOUNT OFF
+
+

@@ -1,0 +1,32 @@
+/* *************************************************************************
+ * NAME : DBENURI.UDP_MAIN_EVENT_STAGE_UP
+ * TYPE : PROCEDURE
+ * TIME : Create: 2018-03-28 18:50:00
+ *        Modify: 2018-03-28 18:50:04
+ *        Backup: 20180521_1739
+ ************************************************************************* */
+
+
+  CREATE OR REPLACE PROCEDURE "DBENURI"."UDP_MAIN_EVENT_STAGE_UP" 
+IS
+
+BEGIN
+
+  DELETE FROM TBL_MAIN_NEWS@ORADB_253 WHERE MN_TYPE='R';
+
+  INSERT INTO TBL_MAIN_NEWS@ORADB_253
+  ( MN_TYPE, MN_PAGE, MN_SORT, KB_NO, MN_TITLE, MN_ICONFLAG, HIT_CNT, MN_IDX, MN_UPDATE, HIT_YESTERDAY, AUTO_FLAG, BG_NO, MN_URL, MN_REGDATE, MN_MEMO, IMG_URL )
+  SELECT
+  MN_TYPE, MN_PAGE, MN_SORT, KB_NO, MN_TITLE, 0, 0, MN_IDX, 'Y', 0, 0, 0, MN_URL, SYSDATE, MN_MEMO, IMG_URL
+  FROM TBL_MAIN_NEWS_MAN
+  WHERE MN_TYPE='R'
+  ;
+  
+  COMMIT;
+
+ EXCEPTION
+     WHEN OTHERS THEN
+        ROLLBACK;
+        DBMS_OUTPUT.PUT_LINE('UDP_MAIN_EVENT_STAGE_UP error : errorcode => ' || SQLCODE || ', ERRMSG => ' || SQLERRM);
+
+END;

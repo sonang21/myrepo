@@ -1,0 +1,3 @@
+MPDB_TEST=jdbc:sqlserver://1.1.1.1:1433;databaseName=DB;user=user;password=pass
+ANALSTORE=jdbc:sqlserver://1.1.1.1:1433;databaseName=DB;user=user;password=pass
+ENURI_TEST=jdbc:oracle:thin:@//1.1.1.1:1521/SID;user=user;password=pass

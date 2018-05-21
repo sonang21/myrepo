@@ -1,0 +1,81 @@
+/* *************************************************************************
+ * NAME : dbo.UDP_BC_BOARD_ONLYREAD
+ * TYPE : PROCEDURE (SQL_STORED_PROCEDURE)
+ * TIME : Create: 2004-11-02 03:31:53.84
+ *        Modify: 2018-05-03 17:23:35.013
+ *        Backup: 20180521_1737
+ ************************************************************************* */
+
+
+
+/****** 개체: 저장 프로시저 dbo.UP_BC_BOARD_ONLYREAD    스크립트 날짜: 2004-10-23 오전 10:56:08 ******/
+
+/****** 개체: 저장 프로시저 dbo.UP_BC_BOARD_ONLYREAD    스크립트 날짜: 2004-07-07 오후 2:11:14 ******/
+CREATE   PROC UDP_BC_BOARD_ONLYREAD
+	@GROUP INT,
+	@BB_NO INT
+
+AS
+BEGIN
+	SET NOCOUNT ON
+	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED
+	
+	DECLARE @FILE1 VARCHAR(255)
+	DECLARE @FILE2 VARCHAR(255)
+	
+	DECLARE @TEMPA TABLE
+	(
+		IDX INT IDENTITY(1,1),
+		BA_FILE VARCHAR(255)
+	)
+	SET @FILE1=''
+	SET @FILE2=''
+	
+
+	INSERT INTO @TEMPA ( BA_FILE)
+	SELECT BA_FILE
+	FROM TBL_BOARD_ATTACHFILE (NOLOCK)
+	WHERE BA_GROUP  = @GROUP
+		AND BA_NO = @BB_NO
+
+	SELECT @FILE1 = BA_FILE
+	FROM @TEMPA
+	WHERE IDX=1
+
+	SELECT @FILE2 = BA_FILE
+	FROM @TEMPA
+	WHERE IDX=2
+	
+	
+	
+
+
+
+	SELECT BB_IDX,
+		BB_GROUP,
+		BB_NO,
+		BB_REF,
+		BB_STEP,
+		BB_DEPTH,
+		BB_USERID,
+		BB_USERNAME,
+		BB_RECEIVER,
+		BB_REFERER,
+		BB_TITLE,
+		BB_CONTENT,
+		BB_REGDATE,
+		BB_HITS,
+		BB_HTML,
+		BB_STATUS,
+		BB_DELFLAG,
+		@FILE1 FILE1,
+		@FILE2 FILE2
+	FROM TBL_BC_BOARD (NOLOCK)
+	WHERE BB_GROUP = @GROUP
+		AND BB_NO = @BB_NO
+		AND BB_DELFLAG='0'
+
+END
+
+
+

@@ -1,0 +1,29 @@
+/* *************************************************************************
+ * NAME : dbo.udp_shop_special_goods_del
+ * TYPE : PROCEDURE (SQL_STORED_PROCEDURE)
+ * TIME : Create: 2013-11-20 17:29:54.077
+ *        Modify: 2018-05-03 17:23:34.93
+ *        Backup: 20180521_1739
+ ************************************************************************* */
+
+CREATE PROC udp_shop_special_goods_del
+	@seqno_csv varchar(1000)
+AS 
+	SET NOCOUNT ON 
+	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED
+	-- ----------------------------------------------
+	-- 작성자 : wookki25 / 2010-06-18
+	-- 설  명 : 쇼핑몰 특가 상품 관리
+	-- ----------------------------------------------
+	-- ----------------------------------------------
+	-- 수정내역
+	-- ----------------------------------------------
+	/* 
+	수정일:			수정자:			수정내용:
+	-------------------------------------------------
+	*/	
+	if @seqno_csv is null
+		return 0
+
+	exec('delete from tbl_shop_special_goods where seqno in ('+@seqno_csv+')')	
+

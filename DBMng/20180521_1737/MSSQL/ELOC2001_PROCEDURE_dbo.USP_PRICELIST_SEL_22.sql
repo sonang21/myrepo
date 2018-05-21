@@ -1,0 +1,27 @@
+/* *************************************************************************
+ * NAME : dbo.USP_PRICELIST_SEL_22
+ * TYPE : PROCEDURE (SQL_STORED_PROCEDURE)
+ * TIME : Create: 2007-03-27 14:40:27.157
+ *        Modify: 2018-05-03 17:23:36.15
+ *        Backup: 20180521_1737
+ ************************************************************************* */
+
+
+CREATE PROC USP_PRICELIST_SEL_22
+	@PL_VCODE INT,
+	@PL_GOODSCODE VARCHAR(50)
+AS
+BEGIN
+	SET NOCOUNT ON
+	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED
+	SELECT TOP 1
+		PL_NO,
+		PL_GOODSNM,
+		PL_PRICE,
+		PL_STATUS
+	FROM PRICELIST 
+	WHERE PL_VCODE=@PL_VCODE
+		AND PL_GOODSCODE = @PL_GOODSCODE
+		AND PL_GOODSCODE_CS = CHECKSUM(@PL_GOODSCODE)
+		AND PL_GOODSNM<>''		
+END

@@ -1,0 +1,23 @@
+/* *************************************************************************
+ * NAME : ASISTEST.UDP_MAIN_DEPART_GOODS_ENURI_UP
+ * TYPE : PROCEDURE
+ * TIME : Create: 2018-05-04 18:33:26
+ *        Modify: 2018-05-07 13:11:15
+ *        Backup: 20180521_1739
+ ************************************************************************* */
+
+
+  CREATE OR REPLACE PROCEDURE "ASISTEST"."UDP_MAIN_DEPART_GOODS_ENURI_UP" AS 
+BEGIN
+
+  DELETE FROM TBL_MAIN_DEPT_GOODS WHERE MENU_NO='1';
+  
+  INSERT INTO TBL_MAIN_DEPT_GOODS
+  SELECT MENU_NO, MODELNO, INS_DATE, MODELNM, BRAND, MODEL_IMG, CA_CODE, MOBILE_YN, PLAN_TITLE, PLAN_CONTENT, PLAN_URL FROM TBL_MAIN_DEPT_GOODS_MAN WHERE MENU_NO='1';
+  commit; 
+
+ EXCEPTION
+     WHEN OTHERS THEN
+       DBMS_OUTPUT.PUT_LINE('UDP_MAIN_DEPART_GOODS_ENURI_UP error : errorcode => ' || SQLCODE || ', ERRMSG => ' || SQLERRM);
+       
+END UDP_MAIN_DEPART_GOODS_ENURI_UP;

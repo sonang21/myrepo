@@ -1,0 +1,1 @@
+select /*+ TEMP_TBS_MEMORY*/ distinct 부대부호||';'||부대약칭명  from 부대 limit 10000

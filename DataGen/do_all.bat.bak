@@ -1,0 +1,7 @@
+@echo off
+
+rem call setEnv.bat
+
+for /F %%f in (xml/list.txt) do (
+  java bmt_data/DataGen %%f insert
+) 
