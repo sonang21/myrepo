@@ -17,7 +17,7 @@ import org.fxmisc.richtext.model.StyleSpans;
 import org.fxmisc.richtext.model.StyleSpansBuilder;
 import org.reactfx.Subscription;
 
-import bts.app.Main;
+import bts.app.MainApp;
 
 public class ViewSource {
 	

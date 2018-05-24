@@ -16,7 +16,7 @@ import org.fxmisc.richtext.model.StyleSpans;
 import org.fxmisc.richtext.model.StyleSpansBuilder;
 import org.reactfx.Subscription;
 
-import bts.app.Main;
+import bts.app.MainApp;
 
 public class ViewSourceEx {
 	
@@ -89,7 +89,7 @@ public class ViewSourceEx {
         // when no longer need syntax highlighting and wish to clean up memory leaks
         // run: `cleanupWhenNoLongerNeedIt.unsubscribe();`
         _codeArea.replaceText(0, 0, _sText);
-        _codeArea.getStylesheets().add(Main.class.getResource("sql-keywords.css").toExternalForm());
+        _codeArea.getStylesheets().add(MainApp.class.getResource("sql-keywords.css").toExternalForm());
         
 
 	}

@@ -1,7 +1,7 @@
 package bts.app.view;
 
 import bts.app.DBObjectWork;
-import bts.app.Main;
+import bts.app.MainApp;
 import bts.utils.db.DBConnection.DBMS_TYPE;
 import bts.utils.fxext.TableViewExt;
 //import javafx.beans.property.SimpleStringProperty;
@@ -32,7 +32,7 @@ import java.io.File;
 
 @SuppressWarnings({"unchecked","rawtypes"})
 public class ObjectList {
-	private Main _mainApp;
+	private MainApp _mainApp;
 	@FXML
 	private TableView<ObservableList> _tvObjectList;
 	
@@ -80,7 +80,7 @@ public class ObjectList {
 //	    System.out.print("\t");
 //	}
 	
-	public void setMainApp(Main mainApp) { _mainApp = mainApp; }
+	public void setMainApp(MainApp mainApp) { _mainApp = mainApp; }
 	
 	@FXML
 	public void onButtonOpen() {

@@ -3,6 +3,7 @@ package bts.app;
 import java.io.IOException;
 
 import bts.app.view.ObjectList;
+import bts.app.view.SQLPlanView;
 import bts.app.view.ViewSource;
 import bts.app.view.ViewSourceEx;
 import javafx.application.Application;
@@ -19,10 +20,11 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
 
 
-public class Main extends Application {
+public class MainApp extends Application {
 	private Stage _stage;
 	private BorderPane _rootLayout;
 	private ObjectList _objectList;
+	private SQLPlanView _sqlPlanView;
 	
 	@Override
 	public void start(Stage primaryStage) {
@@ -31,10 +33,26 @@ public class Main extends Application {
 			_stage.setTitle("DB Object Transfer");
 			
 			initRootLayout();
-			initObjectList();
+//			initObjectList();
+			initSQLPlanView();
 			
 		} catch(Exception e) {
 			e.printStackTrace();
+		}
+	}
+	
+	private void initSQLPlanView() {
+		try {
+			FXMLLoader loader = new FXMLLoader();
+			loader.setLocation(SQLPlanView.class.getResource("SQLPlanView.fxml"));
+			BorderPane sqlPlanView = (BorderPane)loader.load();
+			_rootLayout.setCenter(sqlPlanView);
+			
+			_sqlPlanView = loader.getController();
+			_sqlPlanView.setMainApp(this);
+			
+		} catch (Exception ex) {
+			ex.printStackTrace();
 		}
 	}
 	
@@ -57,7 +75,7 @@ public class Main extends Application {
         try {
             // fxml 파일에서 상위 레이아웃을 가져온다.
             FXMLLoader loader = new FXMLLoader();
-            loader.setLocation(Main.class.getResource("view/RootLayout.fxml"));
+            loader.setLocation(MainApp.class.getResource("view/RootLayout.fxml"));
             _rootLayout = (BorderPane) loader.load();
             
             /**
@@ -110,7 +128,7 @@ public class Main extends Application {
 	    try {
 	        // fxml 파일을 로드하고 나서 새로운 스테이지를 만든다.
 	        FXMLLoader loader = new FXMLLoader();
-	        loader.setLocation(Main.class.getResource("view/ViewSource.fxml"));
+	        loader.setLocation(MainApp.class.getResource("view/ViewSource.fxml"));
 	        BorderPane page = (BorderPane) loader.load();
 
 	        // 다이얼로그 스테이지를 만든다.
@@ -137,7 +155,7 @@ public class Main extends Application {
 	    try {
 	        // fxml 파일을 로드하고 나서 새로운 스테이지를 만든다.
 	        FXMLLoader loader = new FXMLLoader();
-	        loader.setLocation(Main.class.getResource("view/ViewSourceEx.fxml"));
+	        loader.setLocation(MainApp.class.getResource("view/ViewSourceEx.fxml"));
 	        BorderPane page = (BorderPane) loader.load();
 
 	        // 다이얼로그 스테이지를 만든다.
