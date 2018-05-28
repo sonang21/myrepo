@@ -14,6 +14,9 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Properties;
 
+import javax.crypto.Cipher;
+import javax.crypto.spec.SecretKeySpec;
+
 //import java.time.LocalDate;
 //import java.time.LocalDateTime;
 //import java.time.format.DateTimeFormatter;
@@ -37,11 +40,12 @@ public class DBObjectBackup {
 		_backupRootPath = _backupRootPath + File.separator + (new SimpleDateFormat("yyyyMMdd_HHmm")).format(new Date());
 		_sBackupDateTime = (new SimpleDateFormat("yyyyMMdd_HHmm")).format(new Date());
 		
-		mssqlDBSourceBackupAll();
-		oracleDBSourceBackup(null); // null for all db
+		mssqlInsSourceBackup("MPDB_TEST", null);
+		mssqlInsSourceBackup("ANALSTORE", "ANALSTORE");
+		oracleDBSourceBackup("ENURI_TEST"); // null for all db
 	}
 	
-	public static void mssqlDBSourceBackupAll() {
+	public static void mssqlInsSourceBackup(String sInsName, String sDbName) {
 		System.out.println("mssqlDBSourceBackupAll() ..... Start");
 		try {
 			//InputStream  input = new FileInputStream("conf/DBConfig.ini");
@@ -50,12 +54,19 @@ public class DBObjectBackup {
 			prop.load(input);
 			
 			Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
-			String sConn = prop.getProperty("MPDB_TEST"); //"jdbc:sqlserver://1.1.1.1:1433;instanceName=inst;databaseName=db;user=user;password=pass;";
-			Connection oConn = DriverManager.getConnection(sConn, "dbadm","dba1020");
+			String sConn = prop.getProperty(sInsName + ".URL"); //"jdbc:sqlserver://1.1.1.1:1433;instanceName=inst;databaseName=db;user=user;password=pass;";
+			String sUser = prop.getProperty(sInsName + ".USR");
+			String sPass = prop.getProperty(sInsName + ".PWD");
+			sPass = getPass(sPass);
+			Connection oConn = DriverManager.getConnection(sConn, sUser, sPass);
 			Statement oStmt = oConn.createStatement();
-			ResultSet oRs = oStmt.executeQuery("select name from master.sys.databases where database_id > 6 order by name");
+			ResultSet oRs = oStmt.executeQuery(
+					"select name from master.sys.databases where "
+					+ ((sDbName == null || sDbName.isEmpty()) ? "database_id > 6 " : " name = '" + sDbName + "' \r\n" ) 
+					+ " order by name"
+					);
 			while(oRs.next()) {
-				mssqlDBSourceBackup(oRs.getString(1));
+				mssqlDBSourceBackup(oConn, oRs.getString(1));
 			}
 			oRs.close();
 			oStmt.close();
@@ -66,7 +77,7 @@ public class DBObjectBackup {
 		System.out.println("mssqlDBSourceBackupAll() ..... Complete!");
 	}
 	
-	public static void mssqlDBSourceBackup(String sDBName) {
+	public static void mssqlDBSourceBackup(Connection oConn, String sDBName) {
 		System.out.println("mssqlDBSourceBackup(" + sDBName + ")... Start");
 		
 		String sPath = _backupRootPath + File.separator + "MSSQL";
@@ -85,11 +96,13 @@ public class DBObjectBackup {
 			Properties prop = new Properties();
 			prop.load(input);
 			
-			Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
-			String sConn = prop.getProperty("MPDB_TEST"); //"jdbc:sqlserver://1.1.1.1:1433;instanceName=ins;databaseName=DB;user=user;password=pass;";
-			Connection oConn = DriverManager.getConnection(sConn, "dbadm","dba1020");
-			
-			
+//			Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+//			String sConn = prop.getProperty("MPDB_TEST"); //"jdbc:sqlserver://1.1.1.1:1433;instanceName=ins;databaseName=DB;user=user;password=pass;";
+//			String sUser = prop.getProperty("MPDB_TEST_USR");
+//			String sPass = prop.getProperty("MPDB_TEST_PWD");
+//			sPass = getPass(sPass);
+//			Connection oConn = DriverManager.getConnection(sConn, sUser, sPass);
+
 			Statement oStmt = oConn.createStatement();
 			
 			oConn.setCatalog(sDBName);
@@ -130,7 +143,7 @@ public class DBObjectBackup {
 			}
 			oRs.close();
 			oStmt.close();
-			oConn.close();
+//			oConn.close();
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
@@ -140,7 +153,7 @@ public class DBObjectBackup {
 	
 	public static void oracleDBSourceBackup(String sDBName) {
 		System.out.println("oracleDBSourceBackup(" + sDBName + ")... Start");
-		
+		String sOwner = "";
 		String sPath = _backupRootPath + File.separator + "ORACLE";
 		String sFileName;
 		
@@ -157,8 +170,11 @@ public class DBObjectBackup {
 			prop.load(input);
 			
 			Class.forName("oracle.jdbc.OracleDriver");
-			String sConn = prop.getProperty("ENURI_TEST"); //"jdbc:oracle:thin:@//1.1.1.1:1521/sid";
-			Connection oConn = DriverManager.getConnection(sConn, "dbadm", "dba1020");
+			String sConn = prop.getProperty(sDBName + ".URL"); //"jdbc:oracle:thin:@//1.1.1.1:1521/sid";
+			String sUser = prop.getProperty(sDBName + ".USR");
+			String sPass = prop.getProperty(sDBName + ".PWD");
+			sPass = getPass(sPass);
+			Connection oConn = DriverManager.getConnection(sConn, sUser, sPass);
 			
 			
 			Statement oStmt = oConn.createStatement();
@@ -169,9 +185,9 @@ public class DBObjectBackup {
 					"     , DBMS_METADATA.GET_DDL(OBJECT_TYPE=>REPLACE(A.OBJECT_TYPE, ' ', '_'), NAME=>A.OBJECT_NAME, SCHEMA=>A.OWNER) DDL \r\n" + 
 					"  FROM DBA_OBJECTS A \r\n" + 
 					" WHERE 1 = 1 \r\n" +
-					((sDBName == null || sDBName.isEmpty()) ? 
+					((sOwner == null || sOwner.isEmpty()) ? 
 				    "   AND A.OWNER IN (SELECT USERNAME FROM DBA_USERS WHERE USER_ID > 83) \r\n"
-					: " and A.OWNER = '" + sDBName + "' \r\n" ) +
+					: " and A.OWNER = '" + sOwner + "' \r\n" ) +
 					"   --AND A.OWNER = 'DBADM' \r\n" +
 					"   AND A.OBJECT_TYPE IN ('PACKAGE','PROCEDURE','FUNCTION', 'TRIGGER','VIEW', 'MATERIALIZED VIEW') \r\n" + 
 					"   --AND A.OBJECT_TYPE IN ('TABLE','INDEX','SEQUENCE','PACKAGE','PROCEDURE','FUNCTION', 'TRIGGER','VIEW', 'MATERIALIZED VIEW') \r\n" + 
@@ -203,5 +219,26 @@ public class DBObjectBackup {
 		
 	}
 	
+	private static String getPass(String strText) throws Exception 
+	{
+		SecretKeySpec keySpec =  new SecretKeySpec("DBMSSecretKey#91".getBytes(), "AES");
+		Cipher secCipher = Cipher.getInstance("AES");
+		secCipher.init(Cipher.DECRYPT_MODE, keySpec);
+		byte[] byteEn = hexToBytes(strText);
+		
+		byte[] byteDe = secCipher.doFinal(byteEn);
+		return new String(byteDe);
+	}
+	
+	private static byte[] hexToBytes(String strHex) {
+		byte[] bytesResult = new byte[strHex.length()/2];
+		
+		for(int i = 0; i < bytesResult.length; i++)
+		{
+			bytesResult[i] = Integer.valueOf(strHex.substring(i*2, i*2+2),16).byteValue();
+		}
+		
+		return bytesResult;
+	}
 
 }
