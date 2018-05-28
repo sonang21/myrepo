@@ -30,24 +30,33 @@ public class SQLPlanView {
 	
 	public void setTreeView() {
 		_ttvPlan.getColumns().clear();
-		TreeTableColumn<SqlPlan, Integer> cId = new TreeTableColumn<SqlPlan, Integer>("IDx");
 		TreeTableColumn<SqlPlan, String>  cOperation = new TreeTableColumn<SqlPlan, String>("OperationX");
+		TreeTableColumn<SqlPlan, Integer> cId = new TreeTableColumn<SqlPlan, Integer>("IDx");
 
-		cId.setCellValueFactory(new TreeItemPropertyValueFactory<SqlPlan, Integer>("Id"));
 		cOperation.setCellValueFactory(new TreeItemPropertyValueFactory<SqlPlan, String>("Operation"));
-		_ttvPlan.getColumns().addAll(cId, cOperation);
+		cId.setCellValueFactory(new TreeItemPropertyValueFactory<SqlPlan, Integer>("Id"));
+
+		_ttvPlan.getColumns().addAll(cOperation, cId);
 
 		
-		SqlPlan plan1 = new SqlPlan(1,0, "root");
-		SqlPlan plan2 = new SqlPlan(2,1, "sub1");
-		SqlPlan plan3 = new SqlPlan(3,1, "sub2");
+		SqlPlan plan1 = new SqlPlan(1,0, "(0)_ - root");
+		SqlPlan plan2 = new SqlPlan(2,1, "(2)- sub1");
+		SqlPlan plan3 = new SqlPlan(3,1, "(3)- sub2");
+		SqlPlan plan21 = new SqlPlan(21,2, "(21) - sub21");
+		SqlPlan plan31 = new SqlPlan(31,3, "(31) - sub31");
+		
 		
 		TreeItem<SqlPlan> itemRoot = new TreeItem<SqlPlan>(plan1);
 		TreeItem<SqlPlan> itemSub1 = new TreeItem<SqlPlan>(plan2);
 		TreeItem<SqlPlan> itemSub2 = new TreeItem<SqlPlan>(plan3);
+		TreeItem<SqlPlan> itemSub21 = new TreeItem<SqlPlan>(plan21);
+		TreeItem<SqlPlan> itemSub31 = new TreeItem<SqlPlan>(plan31);
+		itemSub1.getChildren().addAll(itemSub21);
+		itemSub2.getChildren().addAll(itemSub31);
 		itemRoot.getChildren().addAll(itemSub1, itemSub2);
 		
 		_ttvPlan.setRoot(itemRoot);
+//		_ttvPlan.setShowRoot(false);
 		
 
 	}
