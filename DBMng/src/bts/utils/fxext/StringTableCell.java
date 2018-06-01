@@ -72,7 +72,7 @@ public class StringTableCell extends TableCellExt<TableRow, String> {
 //						.otherwise(ContentDisplay.TEXT_ONLY)
 //			);
 		}
-		//System.out.println("StringTableCell.StringTableCell() ... end");
+//		System.out.println("StringTableCell.StringTableCell() ... end");
 	}
 	
 	@Override
