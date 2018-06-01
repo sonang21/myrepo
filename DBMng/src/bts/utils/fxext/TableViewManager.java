@@ -114,29 +114,21 @@ public class TableViewManager {
 			col.setEditable(true);
 			col.setCellValueFactory(cellData -> cellData.getValue().getBooleanProperty(colName));
 			if (isEditable) {
-//				col.setCellFactory(CheckBoxTableCell.forTableColumn(col));
+				col.setCellFactory(CheckBoxTableCell.forTableColumn(col));
 
-				col.setCellFactory(cellDataFeatures -> {
-					CheckBoxTableCell<TableRow, Boolean> cell = new CheckBoxTableCell<>();
-					
-					cell.selectedProperty().addListener((observable, oldValue, newValue) -> {
-						System.out.println("listener: " + oldValue + ", " + newValue);
-						//cell.commitEdit(newValue == null ? false : newValue);
-					});
-//					//cell.setEditable(true);
-					return cell;
-				});
-
-				// this is not called
-//				col.setOnEditCommit(event -> {
-//					event.getRowValue().setValue(colName, event.getNewValue());
-//					System.out.println("setOnEditCommit:" + event.getRowValue().getValueBoolean(colName).toString());
+//				col.setCellFactory(cellDataFeatures -> {
+//					CheckBoxTableCell<TableRow, Boolean> cell = new CheckBoxTableCell<>();
+//					
+//					cell.selectedProperty().addListener((observable, oldValue, newValue) -> {
+//						System.out.println("listener: " + oldValue + ", " + newValue);
+//						//cell.commitEdit(newValue == null ? false : newValue);
+//					});
+//					return cell;
 //				});
-//				col.setOnEditStart(event -> System.out.println("setOnEditStart:..."));
-				
 				setCheckBoxColumnEvent(getColumnIndex(colName));
 			}
 			else {
+				//변경이 안되도록 마우스, 키 이벤트를 모두 차단함
 				col.setCellFactory(cellDataFeatures -> {
 					CheckBoxTableCell<TableRow, Boolean> cell = new CheckBoxTableCell<>();
 					cell.addEventFilter(KeyEvent.ANY, new EventHandler<KeyEvent> () {
@@ -248,12 +240,14 @@ public class TableViewManager {
 //						_tableView.getItems().get(m.getFocusedIndex()).setValueBoolean(colName, ! bChecked);
 						
 
+//						System.out.println("ix:" + columnIndex + ", " + m.getFocusedCell().getColumn());
+//						System.out.print("text:" + m.getFocusedCell().getTableColumn().getText());
+//						System.out.print(", cellvalue :" + m.getFocusedCell().getTableColumn().getCellData(m.getFocusedIndex()));
+//						System.out.println(", itemValue:" + _tableView.getItems().get(m.getFocusedIndex()).getValueBoolean(getColumnName(columnIndex)));
+//						System.out.println("factory value:" + m.getFocusedCell().getTableColumn().toString());
+						m.getFocusedCell().getTableColumn().setVisible(false);
+						m.getFocusedCell().getTableColumn().setVisible(true);
 //						_tableView.refresh();
-						System.out.println("ix:" + columnIndex + ", " + m.getFocusedCell().getColumn());
-						System.out.print("text:" + m.getFocusedCell().getTableColumn().getText());
-						System.out.print(", cellvalue :" + m.getFocusedCell().getTableColumn().getCellData(m.getFocusedIndex()));
-						System.out.println(", itemValue:" + _tableView.getItems().get(m.getFocusedIndex()).getValueBoolean(getColumnName(columnIndex)));
-						System.out.println("factory value:" + m.getFocusedCell().getTableColumn().isVisible());
 					}
 				}
 				

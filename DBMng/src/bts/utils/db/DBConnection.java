@@ -27,8 +27,8 @@ import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 
 import bts.utils.db.Encryption;
-import javafx.beans.property.SetProperty;
 
+@SuppressWarnings("unused")
 public class DBConnection {
 	
 	public static enum DBMS_TYPE { ORACLE, MSSQL };
@@ -36,6 +36,7 @@ public class DBConnection {
 	
 	private static String _sConfigFile;
 	private String _sConnName = null;
+	
 	private String _sDBMS = null;
 	private String _sDriver = null;
 	private String _sDriverURL = null;

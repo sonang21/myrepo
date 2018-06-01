@@ -20,7 +20,7 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
 
-
+@SuppressWarnings("unused")
 public class MainApp extends Application {
 	private Stage _stage;
 	private BorderPane _rootLayout;

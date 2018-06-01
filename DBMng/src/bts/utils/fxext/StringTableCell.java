@@ -25,7 +25,7 @@ public class StringTableCell extends TableCellExt<TableRow, String> {
 	@Override
 	protected void setInputValue(String value) {
 		((TextField) getInputNode()).setText(value);
-		System.out.println("StringTableCell.setInputValue() --> " + value);
+//		System.out.println("StringTableCell.setInputValue() --> " + value);
 	}
 	
 	@Override
@@ -45,7 +45,7 @@ public class StringTableCell extends TableCellExt<TableRow, String> {
 	
 	public StringTableCell(String fieldName) {
 		// TODO Auto-generated constructor stub
-		//System.out.println("StringTableCell.StringTableCell() ... start");
+//		System.out.println("StringTableCell.StringTableCell() ... start");
 		Node field = getInputNode();
 		
 		// 문자열 편집에서는 상/하 방향키로 셀 이동을 하도록 이벤트 추가
@@ -81,7 +81,7 @@ public class StringTableCell extends TableCellExt<TableRow, String> {
         TableView<TableRow> table = getTableView();
         if (table != null) {
         	table.getSelectionModel().getSelectedItem().setValue(_cellName, item);
-        	System.out.println(table.getSelectionModel().getSelectedItem().getValue(_cellName));
+//        	System.out.println(table.getSelectionModel().getSelectedItem().getValue(_cellName));
         }
     	
 //        if (! isEditing() && ! item.equals(getItem())) {

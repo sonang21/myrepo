@@ -44,14 +44,15 @@ public class TestTableView {
 		_tableView.getSelectionModel().setCellSelectionEnabled(true);
 	}
 
+	@SuppressWarnings("unchecked")
 	public void showTable3() {
 		TableColumn<TableRow, String> colName = new TableColumn<TableRow, String>("Name");
 		TableColumn<TableRow, String> colValue = new TableColumn<TableRow, String>("Value");
 		TableColumn<TableRow, String> colTest = new TableColumn<TableRow, String>("Test");
 		
-		colName = new TableColumn<TableRow, String>("Name");
-		colValue = new TableColumn<TableRow, String>("Value");
-		colTest = new TableColumn<TableRow, String>("Test");
+//		colName = new TableColumn<TableRow, String>("Name");
+//		colValue = new TableColumn<TableRow, String>("Value");
+//		colTest = new TableColumn<TableRow, String>("Test");
 		
 		colName.setCellValueFactory(cellData -> cellData.getValue().getStringProperty("0"));
 		colName.setCellFactory(cellDataFeatures -> new StringTableCell("0"));
