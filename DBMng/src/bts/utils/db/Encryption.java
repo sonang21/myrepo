@@ -1,11 +1,11 @@
 package bts.utils.db;
 
-import java.security.SecureRandom;
+//import java.security.SecureRandom;
 import java.util.Scanner;
 
 import javax.crypto.Cipher;
-import javax.crypto.KeyGenerator;
-import javax.crypto.SecretKey;
+//import javax.crypto.KeyGenerator;
+//import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
 public class Encryption
@@ -69,16 +69,16 @@ public class Encryption
 	}
 	
 	// sometimes error occured.
-	private static SecretKeySpec getSecretKeySpec2(String strSeed, String strAlgorithm) throws Exception
-	{
-		byte[] bytSeed = strSeed.getBytes();
-		KeyGenerator keyGen = KeyGenerator.getInstance(strAlgorithm);
-		SecureRandom secRand = SecureRandom.getInstance("SHA1PRNG");
-		secRand.setSeed(bytSeed);
-		keyGen.init(128, secRand);
-		SecretKey secKey = keyGen.generateKey();
-		return new SecretKeySpec(secKey.getEncoded(), strAlgorithm);		
-	}
+//	private static SecretKeySpec getSecretKeySpec2(String strSeed, String strAlgorithm) throws Exception
+//	{
+//		byte[] bytSeed = strSeed.getBytes();
+//		KeyGenerator keyGen = KeyGenerator.getInstance(strAlgorithm);
+//		SecureRandom secRand = SecureRandom.getInstance("SHA1PRNG");
+//		secRand.setSeed(bytSeed);
+//		keyGen.init(128, secRand);
+//		SecretKey secKey = keyGen.generateKey();
+//		return new SecretKeySpec(secKey.getEncoded(), strAlgorithm);		
+//	}
 	private final static String HEX = "0123456789ABCDEF";
 	private static String bytesToHex(byte[] buff) 
 	{
@@ -116,6 +116,7 @@ public class Encryption
 		return bytesResult;
 	}
 
+	@SuppressWarnings("unused")
 	private static byte[] hexToBytes2(String strHex) {
 		int nLen = strHex.length();
 		byte[] bytesResult = new byte[nLen/2];

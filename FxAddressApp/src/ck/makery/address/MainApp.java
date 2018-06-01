@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.prefs.Preferences;
 
+
+
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
@@ -211,7 +213,7 @@ public class MainApp extends Application {
 	public void loadPersonDataFromFile(File file) {
 	    try {
 	        JAXBContext context = JAXBContext
-	                .newInstance(PersonListWrapper.class);
+	        		.newInstance(PersonListWrapper.class);
 	        Unmarshaller um = context.createUnmarshaller();
 
 	        // 파일로부터 XML을 읽은 다음 역 마샬링한다.

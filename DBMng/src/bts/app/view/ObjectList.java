@@ -353,10 +353,6 @@ public class ObjectList {
     	olist.forEach(row -> row.set(0, "false"));
     	_tvObjectList.refresh();
     }
-
-	
-	
-	
 	
 	@FXML
 	public void onButtonClose() {

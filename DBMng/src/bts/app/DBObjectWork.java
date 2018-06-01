@@ -85,7 +85,7 @@ public class DBObjectWork {
 			oStmt.setString(1, sOwner);
 			oStmt.setString(2, sObjectName);
 //			oStmt.setString(3, sObjectType);
-//			System.out.println(sDBName + ", " + sOwner + ", " + sObjectName);
+			System.out.println(sDBName + ", " + sOwner + ", " + sObjectName);
 			ResultSet oRs = oStmt.executeQuery();
 			if (oRs.next()) {
 				sResult = oRs.getString(5);

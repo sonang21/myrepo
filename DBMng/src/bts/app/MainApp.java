@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import bts.app.view.ObjectList;
 import bts.app.view.SQLPlanView;
+import bts.app.view.TestTableView;
 import bts.app.view.ViewSource;
 import bts.app.view.ViewSourceEx;
 import javafx.application.Application;
@@ -25,6 +26,7 @@ public class MainApp extends Application {
 	private BorderPane _rootLayout;
 	private ObjectList _objectList;
 	private SQLPlanView _sqlPlanView;
+	private TestTableView _testTableView;
 	
 	@Override
 	public void start(Stage primaryStage) {
@@ -34,12 +36,29 @@ public class MainApp extends Application {
 			
 			initRootLayout();
 //			initObjectList();
-			initSQLPlanView();
+//			initSQLPlanView();
+			initTestTableView();
 			
 		} catch(Exception e) {
 			e.printStackTrace();
 		}
 	}
+	
+	private void initTestTableView() {
+		try {
+			FXMLLoader loader = new FXMLLoader();
+			loader.setLocation(TestTableView.class.getResource("TestTableView.fxml"));
+			BorderPane testTableView = (BorderPane)loader.load();
+			_rootLayout.setCenter(testTableView);
+			
+			_testTableView = loader.getController();
+			_testTableView.setMainApp(this);
+			
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+	}
+
 	
 	private void initSQLPlanView() {
 		try {

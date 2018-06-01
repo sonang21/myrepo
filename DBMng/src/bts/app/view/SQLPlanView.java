@@ -2,15 +2,15 @@ package bts.app.view;
 
 import bts.app.MainApp;
 import bts.app.model.SqlPlan;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
+//import javafx.collections.FXCollections;
+//import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.scene.control.TableView;
+//import javafx.scene.control.TableView;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeTableColumn;
 import javafx.scene.control.TreeTableView;
 import javafx.scene.control.cell.TreeItemPropertyValueFactory;
-import javafx.scene.input.KeyCode;
+//import javafx.scene.input.KeyCode;
 
 public class SQLPlanView {
 	private MainApp _mainApp;
@@ -28,6 +28,7 @@ public class SQLPlanView {
 		_mainApp = mainApp;
 	}
 	
+	@SuppressWarnings("unchecked")
 	public void setTreeView() {
 		_ttvPlan.getColumns().clear();
 		TreeTableColumn<SqlPlan, String>  cOperation = new TreeTableColumn<SqlPlan, String>("OperationX");
