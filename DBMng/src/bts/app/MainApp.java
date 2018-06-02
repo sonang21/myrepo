@@ -35,9 +35,9 @@ public class MainApp extends Application {
 			_stage.setTitle("DB Object Transfer");
 			
 			initRootLayout();
-//			initObjectList();
+			initObjectList();
 //			initSQLPlanView();
-			initTestTableView();
+//			initTestTableView();
 			
 		} catch(Exception e) {
 			e.printStackTrace();

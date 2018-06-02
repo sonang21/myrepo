@@ -238,7 +238,6 @@ public class TableViewManager {
 //						String colName = getColumnName(columnIndex);
 //						boolean bChecked = _tableView.getItems().get(m.getFocusedIndex()).getValueBoolean(colName);
 //						_tableView.getItems().get(m.getFocusedIndex()).setValueBoolean(colName, ! bChecked);
-						
 
 //						System.out.println("ix:" + columnIndex + ", " + m.getFocusedCell().getColumn());
 //						System.out.print("text:" + m.getFocusedCell().getTableColumn().getText());
