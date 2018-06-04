@@ -2,11 +2,10 @@ package bts.app.view;
 
 import bts.app.DBObjectWork;
 import bts.app.MainApp;
-import bts.utils.db.DBConnection.DBMS_TYPE;
-import bts.utils.fxext.TableViewExt;
+import bts.utils.fxext.RowData;
+import bts.utils.fxext.TableViewManager;
 //import javafx.beans.property.SimpleStringProperty;
 //import javafx.beans.value.ObservableValue;
-import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -29,12 +28,16 @@ import org.apache.poi.ss.usermodel.*;
 import java.io.File;
 //import java.io.IOException;
 //import java.util.Iterator;
+import java.util.ArrayList;
 
-@SuppressWarnings({"unchecked","rawtypes"})
+//@SuppressWarnings({"unchecked","rawtypes"})
 public class ObjectList {
 	private MainApp _mainApp;
+	private ContextMenu _contextMenu;
 	@FXML
-	private TableView<ObservableList> _tvObjectList;
+	private TableView<RowData> _tvObjectList;
+	
+	private TableViewManager _viewManager;
 	
 	/**
      * 컨트롤러 클래스를 초기화한다.
@@ -47,6 +50,8 @@ public class ObjectList {
 				//_tvObjectList.getSelectionModel().getSelectedItem();
 				chagneCheckStatus();
 			}
+			
+			event.consume();
 			
 		});
 	}
@@ -124,86 +129,52 @@ public class ObjectList {
         		// Create a DataFormatter to format and get each cell's value as String
                 DataFormatter dataFormatter = new DataFormatter();
                 
-                ObservableList<ObservableList> rowList = FXCollections.observableArrayList();
+//                ObservableList<ObservableList> rowList = FXCollections.observableArrayList();
                 
-                _tvObjectList.getColumns().clear();
+        		_viewManager = new TableViewManager(_tvObjectList, true);
                 
                 //선택 컬럼 추가
-        		TableViewExt ext = new TableViewExt(_tvObjectList);
-        		ext.addColumnCheckBoxEx("선택");
+//        		TableViewExt ext = new TableViewExt(_tvObjectList);
+        		
+//        		ext.addColumnCheckBoxEx("선택");
                 
             	
                 int iR=0; 
-//                int iC=1;
+                String colName;
+                int iC=0;
+                ArrayList<String> cols = new ArrayList<>();
         		for (Row row: sheet) {
         			//첫줄에 대해서 컬럼 헤더 설정
         			if (iR==0) {
+        				_viewManager.addColumnInteger("번호", "번호", false);
+        				_viewManager.addColumnCheckBox("선택", "선택", true); // 체크박스 컬럼에 대해 명칭으로 관리
+        				
 	        			for(Cell cell: row) {
-		                	ext.addColumnEx(dataFormatter.formatCellValue(cell));
-//		                	final int j = iC;
-//		                	System.out.println(String.valueOf(j));
-//		                	iC++;
-//		                	TableColumn col = new TableColumn(dataFormatter.formatCellValue(cell));
-//		                	col.setCellValueFactory(
-//		                			new Callback<CellDataFeatures<ObservableList,String>,ObservableValue<String>>() {                    
-//		    							public ObservableValue<String> call(CellDataFeatures<ObservableList, String> param) {                                                                                              
-//		    								return new SimpleStringProperty(param.getValue().get(j).toString());                        
-//		    							}                    
-//		    						}
-//		                	);
-//		                	_tvObjectList.getColumns().addAll(col);
+	        				colName = dataFormatter.formatCellValue(cell);
+		                	_viewManager.addColumnString(colName, colName, false);
+		                	cols.add(colName);
 	        			}
-	        			ext.addColumnEx("검사"); // 부가적인 컬럼 설정
+	        			_viewManager.addColumnString("검사", "검사", false); // 부가적인 컬럼 설정
         			}
         			else {
-        				ObservableList<String> rowData = FXCollections.observableArrayList();
-        				rowData.add("false"); // 첫 컬럼값은 선택 false로 설정
+        				RowData rowData = new RowData();
+        				rowData.setValueInteger("번호", iR);
+        				rowData.setValueBoolean("선택", false); iC++;
+        				iC = 0;
 	        			for(Cell cell: row) {
 	                        String cellValue = dataFormatter.formatCellValue(cell);
-	        				rowData.add(cellValue);
+	        				rowData.setValueString(cols.get(iC++), cellValue);
 	        			}
-	        			rowData.add("-"); // 부가적인 컬럼에 초기값 설정
-        				rowList.add(rowData);
+	        			rowData.setValueString("검사", "-"); // 부가적인 컬럼에 초기값 설정
+        				_viewManager.addRowData(rowData);
         			}
         			iR++;
                 }
-        		_tvObjectList.setItems(rowList);
+        		//_tvObjectList.setItems(rowList);
+        		_viewManager.setTableViewItems();
+        		_viewManager.getTableView().getSelectionModel().setCellSelectionEnabled(true);
+        		
         		workbook.close();
-//        		ext.addListener();
-//        		ext.setCellEx(1, ext.columnCountEx()-1, "XXX");
-
-        		//        		ext.addColumnEx("점검1");
-//        		ext.setCellEx(1, ext.columnCountEx()-1, "XXX");
-        		
-//        		//데이터 셋 추가후 추가적인 컬럼 구성 테스트
-//        		TableColumn col = new TableColumn("테스트");
-//        		final int j = _tvObjectList.getColumns().size();
-//            	col.setCellValueFactory(
-//            			new Callback<CellDataFeatures<ObservableList,String>,ObservableValue<String>>() {                    
-//							public ObservableValue<String> call(CellDataFeatures<ObservableList, String> param) {                                                                                              
-//								return new SimpleStringProperty(param.getValue().get(j).toString());                        
-//							}                    
-//						}
-//            	);
-//    			_tvObjectList.getColumns().addAll(col);
-        		
-//        		ObservableList<ObservableList> listAll = (ObservableList<ObservableList>)_tvObjectList.getItems();
-////        		System.out.println(String.format("Size of listStr : %d",  listStr.size()));
-////        		((ObservableList<String>)_tvObjectList.getItems().get(0)).set(11, "OK");
-////        		listStr.set(listStr.size() -1, "OK");
-//        		listAll.forEach(row -> {
-//        			row.set(row.size()-1, "OKKK");
-//        			row.add(new String(""));
-//        			row.set(j, "XX");
-//        		});
-//        		
-//        		//ObservableList<String> listStr = listAll.get(1);
-//        		listAll.get(2).set(j, "Yahoo");
-//        		TableViewExt ext = new TableViewExt(_tvObjectList);
-//        		ext.addColumnEx("이런");
-//        		ext.setCellEx(1, 1, "저런");
-        		
-        		
         		
         	} catch (Exception ex) {
 //        		String sStack = ex.getStackTrace()[1].getMethodName();
@@ -233,48 +204,21 @@ public class ObjectList {
 //    	System.out.println("Event Source : " + event.getSource());
 //    	System.out.println("Event Target : " + event.getTarget());
     	if(event.getButton() == MouseButton.PRIMARY) {
+//			System.out.println(event.getTarget().getClass().getSimpleName());
     		if(event.getTarget().getClass().getSimpleName().equalsIgnoreCase("CheckBoxTableCell") ) {
     			//event.getTarget().getClass().getSimpleName().equalsIgnoreCase("TableColumnHeader")
     			//System.out.println(event.getTarget().getClass().getSimpleName());
     			chagneCheckStatus();
         	} else if(event.getClickCount() == 2) {
         		showObjectText();
+        	} else {
+        		if (_contextMenu != null && _contextMenu.isShowing()) {
+        			_contextMenu.hide();
+        		}
         	}
         	
     	} else if(event.getButton() == MouseButton.SECONDARY) {
-    		ContextMenu contextMenu = new ContextMenu();
-    		MenuItem menuItem1 = new MenuItem("View Source");
-    		MenuItem menuItem2 = new MenuItem("Check All");
-    		MenuItem menuItem3 = new MenuItem("UnCheck All");
-    		menuItem1.setOnAction(
-    			new EventHandler<ActionEvent>() {
-    				@Override
-    				public void handle(ActionEvent event ) {
-    					showObjectTextEx();
-    				}
-    			}
-    		);
-    		
-    		menuItem2.setOnAction(
-    			new EventHandler<ActionEvent>() {
-    				@Override
-    				public void handle(ActionEvent event) {
-//    					System.out.println("Right Click Evnet... Check All");
-    					checkListAll();
-    				}
-    			}
-    		);
-    		menuItem3.setOnAction(
-        			new EventHandler<ActionEvent>() {
-        				@Override
-        				public void handle(ActionEvent event) {
-//        					System.out.println("Right Click Evnet... UnCheck All");
-        					unCheckListAll();
-        				}
-        			}
-        		);
-        	contextMenu.getItems().addAll(menuItem1, menuItem2, menuItem3);
-    		contextMenu.show(_tvObjectList, event.getScreenX(), event.getScreenY());
+    		showContextMenu(event);
     	}
     	
 
@@ -289,11 +233,13 @@ public class ObjectList {
     }
 
     private void showObjectText() {
-    	ObservableList<String> rowData = _tvObjectList.getSelectionModel().getSelectedItem();
+    	RowData rowData = _tvObjectList.getSelectionModel().getSelectedItem();
 		String sOwner;
-		String sDB = rowData.get(2);
-		String sObjectName = rowData.get(3).toUpperCase();
-		String sObjectType = rowData.get(1).toUpperCase();
+		
+		String sDB = rowData.getValueString("소분류");
+		String sObjectName = rowData.getValueString("프로그램ID").toUpperCase();
+		String sObjectType = rowData.getValueString("중분류").toUpperCase();
+
 		if (sDB.equalsIgnoreCase("ORACLE")) {
 			sOwner = "DBENURI";
 			//DBObjectWork dbo = new DBObjectWork(DBMS_TYPE.ORACLE, "jdbc:oracle:thin:@//xxx.xxx.xxx.xxx:prot/dbname", "user","pass");
@@ -313,11 +259,14 @@ public class ObjectList {
     }
 
     private void showObjectTextEx() {
-    	ObservableList<String> rowData = _tvObjectList.getSelectionModel().getSelectedItem();
+    	RowData rowData = _tvObjectList.getSelectionModel().getSelectedItem();
+    	if(rowData == null) return;
 		String sOwner;
-		String sDB = rowData.get(2);
-		String sObjectName = rowData.get(3).toUpperCase();
-		String sObjectType = rowData.get(1).toUpperCase();
+		
+		String sDB = rowData.getValueString("소분류");
+		String sObjectName = rowData.getValueString("프로그램ID").toUpperCase();
+		String sObjectType = rowData.getValueString("중분류").toUpperCase();
+		
 		if (sDB.equalsIgnoreCase("ORACLE")) {
 			sOwner = "DBENURI";
 			//DBObjectWork dbo = new DBObjectWork(DBMS_TYPE.ORACLE, "jdbc:oracle:thin:@//xxx.xxx.xxx.xxx:prot/dbname", "user","pass");
@@ -336,21 +285,28 @@ public class ObjectList {
 		}
     }
     private void chagneCheckStatus() {
-    	ObservableList<String> rowData = _tvObjectList.getSelectionModel().getSelectedItem();
-        rowData.set(0, String.valueOf(!Boolean.valueOf(rowData.get(0))));
+    	RowData rowData = _tvObjectList.getSelectionModel().getSelectedItem();
+//    	System.out.println("begin..." + rowData.getValueBoolean(0));
+    	rowData.setBooleanReverse(_viewManager.getColumnIndex("선택"));
+//    	System.out.println("end  ..." + rowData.getValueBoolean(0));
+    	//RowData.set(0, String.valueOf(!Boolean.valueOf(rowData.get(0))));
      	_tvObjectList.refresh();
+     	
+     	
     }
     
     private void checkListAll() {
-    	ObservableList<ObservableList> olist = (ObservableList<ObservableList>)_tvObjectList.getItems();
-    	olist.forEach(row -> row.set(0, "true"));
+    	ObservableList<RowData> olist = (ObservableList<RowData>)_tvObjectList.getItems();
+    	int index = _viewManager.getColumnIndex("선택");
+    	olist.forEach(row -> row.setValueBoolean(index, true));
     	_tvObjectList.refresh();
     	
     }
 
     private void unCheckListAll() {
-    	ObservableList<ObservableList> olist = (ObservableList<ObservableList>)_tvObjectList.getItems();
-    	olist.forEach(row -> row.set(0, "false"));
+    	ObservableList<RowData> olist = (ObservableList<RowData>)_tvObjectList.getItems();
+    	int index = _viewManager.getColumnIndex("선택");
+    	olist.forEach(row -> row.setValueBoolean(index, false));
     	_tvObjectList.refresh();
     }
 	
@@ -358,5 +314,45 @@ public class ObjectList {
 	public void onButtonClose() {
 		_mainApp.getPrimaryStage().close();
 		System.exit(0);
+	}
+	
+	private void showContextMenu(MouseEvent event) {
+		if (_contextMenu == null) {
+			_contextMenu = new ContextMenu();
+			MenuItem menuItem1 = new MenuItem("View Source");
+			MenuItem menuItem2 = new MenuItem("Check All");
+			MenuItem menuItem3 = new MenuItem("UnCheck All");
+			menuItem1.setOnAction(
+				new EventHandler<ActionEvent>() {
+					@Override
+					public void handle(ActionEvent event ) {
+						showObjectTextEx();
+					}
+				}
+			);
+			
+			menuItem2.setOnAction(
+				new EventHandler<ActionEvent>() {
+					@Override
+					public void handle(ActionEvent event) {
+//						System.out.println("Right Click Evnet... Check All");
+						checkListAll();
+					}
+				}
+			);
+			menuItem3.setOnAction(
+	    			new EventHandler<ActionEvent>() {
+	    				@Override
+	    				public void handle(ActionEvent event) {
+//	    					System.out.println("Right Click Evnet... UnCheck All");
+	    					unCheckListAll();
+	    				}
+	    			}
+	    		);
+	    	_contextMenu.getItems().addAll(menuItem1, menuItem2, menuItem3);
+	    	_contextMenu.setConsumeAutoHidingEvents(true);
+		} 
+		_contextMenu.show(_tvObjectList, event.getScreenX(), event.getScreenY());
+		
 	}
 }

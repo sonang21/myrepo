@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import bts.app.MainApp;
 
 import bts.utils.fxext.StringTableCell;
-import bts.utils.fxext.TableRow;
+import bts.utils.fxext.RowData;
 import bts.utils.fxext.TableViewManager;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -23,7 +23,7 @@ public class TestTableView {
 	private MainApp _mainApp;
 	
 	@FXML
-	private TableView<TableRow> _tableView;
+	private TableView<RowData> _tableView;
 	
 	public void showTable() {
 		TableViewManager tvMgr = new TableViewManager(_tableView, true);
@@ -38,7 +38,7 @@ public class TestTableView {
 		tvMgr.addRowStrings("cfg", "val c", "test C");
 		tvMgr.addRowObjects("obk", "val o", "test O", true);
 
-		tvMgr.setTableViewItems(tvMgr.getTableRows());
+		tvMgr.setTableViewItems();
 		_tableView.setEditable(true);
 		_tableView.getSelectionModel().selectFirst();
 		_tableView.getSelectionModel().setCellSelectionEnabled(true);
@@ -46,9 +46,9 @@ public class TestTableView {
 
 	@SuppressWarnings("unchecked")
 	public void showTable3() {
-		TableColumn<TableRow, String> colName = new TableColumn<TableRow, String>("Name");
-		TableColumn<TableRow, String> colValue = new TableColumn<TableRow, String>("Value");
-		TableColumn<TableRow, String> colTest = new TableColumn<TableRow, String>("Test");
+		TableColumn<RowData, String> colName = new TableColumn<RowData, String>("Name");
+		TableColumn<RowData, String> colValue = new TableColumn<RowData, String>("Value");
+		TableColumn<RowData, String> colTest = new TableColumn<RowData, String>("Test");
 		
 //		colName = new TableColumn<TableRow, String>("Name");
 //		colValue = new TableColumn<TableRow, String>("Value");
@@ -66,10 +66,10 @@ public class TestTableView {
 		colTest.setCellValueFactory(cellData -> cellData.getValue().getStringProperty("2"));
 		
 		
-		ObservableList<TableRow> list = FXCollections.observableArrayList();
-		TableRow d1 = new TableRow("a", "val a", "test A");
-		TableRow d2 = new TableRow("b", "val b", "test B");
-		TableRow d3 = new TableRow("c", "val c", "test C");
+		ObservableList<RowData> list = FXCollections.observableArrayList();
+		RowData d1 = new RowData("a", "val a", "test A");
+		RowData d2 = new RowData("b", "val b", "test B");
+		RowData d3 = new RowData("c", "val c", "test C");
 		
 		list.addAll(d1, d2, d3);
 		_tableView.getColumns().clear();
@@ -81,15 +81,15 @@ public class TestTableView {
 	}
 
 	public void showTable2() {
-		ArrayList<TableColumn<TableRow, String>> cols = new ArrayList<TableColumn<TableRow, String>>();
+		ArrayList<TableColumn<RowData, String>> cols = new ArrayList<TableColumn<RowData, String>>();
 		
-		cols.add(new TableColumn<TableRow, String>("Name"));
-		cols.add(new TableColumn<TableRow, String>("Value"));
-		cols.add(new TableColumn<TableRow, String>("Test"));
+		cols.add(new TableColumn<RowData, String>("Name"));
+		cols.add(new TableColumn<RowData, String>("Value"));
+		cols.add(new TableColumn<RowData, String>("Test"));
 		
 		cols.get(0).setCellValueFactory(cellData -> cellData.getValue().getStringProperty("0"));
 		cols.get(0).setCellFactory(cellDataFeatures -> new StringTableCell("0"));
-		cols.get(0).setOnEditCommit( (CellEditEvent<TableRow, String> event) -> {
+		cols.get(0).setOnEditCommit( (CellEditEvent<RowData, String> event) -> {
 			event.getRowValue().setValue("0", event.getNewValue());
 		});
 		
@@ -97,10 +97,10 @@ public class TestTableView {
 		cols.get(2).setCellValueFactory(cellData -> cellData.getValue().getStringProperty("2"));
 		
 		
-		ObservableList<TableRow> list = FXCollections.observableArrayList();
-		TableRow d1 = new TableRow("a", "val a", "test A");
-		TableRow d2 = new TableRow("b", "val b", "test B");
-		TableRow d3 = new TableRow("c", "val c", "test C");
+		ObservableList<RowData> list = FXCollections.observableArrayList();
+		RowData d1 = new RowData("a", "val a", "test A");
+		RowData d2 = new RowData("b", "val b", "test B");
+		RowData d3 = new RowData("c", "val c", "test C");
 		
 		list.addAll(d1, d2, d3);
 		_tableView.getColumns().clear();

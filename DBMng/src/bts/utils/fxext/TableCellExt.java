@@ -14,6 +14,7 @@ public abstract class TableCellExt<S,T> extends TableCell<S, T> {
 	private boolean _isEditing;
 	private T _defaultValue;
 	protected String _cellName;
+
 	/** @return a newly created input field **/
 	protected abstract Node createInputNode();
 	

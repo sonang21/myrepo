@@ -3,7 +3,6 @@
  */
 package bts.utils.fxext;
 
-import bts.utils.fxext.TableRow;
 //import javafx.beans.binding.Bindings;
 import javafx.scene.Node;
 //import javafx.scene.control.ContentDisplay;
@@ -16,7 +15,7 @@ import javafx.scene.input.KeyEvent;
  * @author sonan
  *
  */
-public class StringTableCell extends TableCellExt<TableRow, String> {
+public class StringTableCell extends TableCellExt<RowData, String> {
 	@Override
 	protected String getInputValue() {
 		return((TextField) getInputNode()).getText();
@@ -78,7 +77,7 @@ public class StringTableCell extends TableCellExt<TableRow, String> {
 	@Override
 	public void commitEdit(String item) {
         super.commitEdit(item);
-        TableView<TableRow> table = getTableView();
+        TableView<RowData> table = getTableView();
         if (table != null) {
         	table.getSelectionModel().getSelectedItem().setValue(_cellName, item);
 //        	System.out.println(table.getSelectionModel().getSelectedItem().getValue(_cellName));
