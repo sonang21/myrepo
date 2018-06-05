@@ -13,6 +13,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.SelectionMode;
 //import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.Alert.AlertType;
@@ -25,7 +26,11 @@ import javafx.stage.FileChooser;
 
 //import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.*;
+//import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
 import java.io.File;
+import java.io.FileOutputStream;
+//import java.io.FileInputStream;
 //import java.io.IOException;
 //import java.util.Iterator;
 import java.util.ArrayList;
@@ -104,76 +109,82 @@ public class ObjectList {
         	System.out.println("File choosed: " + file.getName());
         	
         	try {
-        		Workbook workbook = WorkbookFactory.create(file);
+//        		Workbook workbook = WorkbookFactory.create(file);
+        		Workbook workbook = WorkbookFactory.create(file, null, true);  // file, passwd, readonly
         		System.out.println("Workbook has " + workbook.getNumberOfSheets() + " Sheets!");
-        		
-//        		Iterator<Sheet> sheetIterlator = workbook.sheetIterator();
-//        		while(sheetIterlator.hasNext()) {
-//        			Sheet sheet = sheetIterlator.next();
-//        			System.out.println(sheet.getSheetName());
-//        		}
         		
         		for(Sheet sheet : workbook) {
         			System.out.println(sheet.getSheetName());
         		}
-        		
-//        		workbook.forEach( sheet -> 
-//        			{
-//        					System.out.println(sheet.getSheetName());
-//        			}
-//        		);
-//        		
+//        		workbook.forEach( sheet -> {System.out.println(sheet.getSheetName());} );
 //        		System.out.println("\n\nIterating over Rows and Columns using for-each loop\n");
         		// Getting the Sheet at index zero
         		Sheet sheet = workbook.getSheetAt(0);
         		// Create a DataFormatter to format and get each cell's value as String
                 DataFormatter dataFormatter = new DataFormatter();
                 
-//                ObservableList<ObservableList> rowList = FXCollections.observableArrayList();
-                
         		_viewManager = new TableViewManager(_tvObjectList, true);
                 
-                //선택 컬럼 추가
-//        		TableViewExt ext = new TableViewExt(_tvObjectList);
-        		
-//        		ext.addColumnCheckBoxEx("선택");
-                
-            	
-                int iR=0; 
+                int ir=0; 
                 String colName;
-                int iC=0;
+                int ic=0;
                 ArrayList<String> cols = new ArrayList<>();
         		for (Row row: sheet) {
         			//첫줄에 대해서 컬럼 헤더 설정
-        			if (iR==0) {
-        				_viewManager.addColumnInteger("번호", "번호", false);
-        				_viewManager.addColumnCheckBox("선택", "선택", true); // 체크박스 컬럼에 대해 명칭으로 관리
-        				
+        			if (ir==0) {
+//        				_viewManager.addColumnInteger("번호", "번호", false);
+//        				_viewManager.addColumnCheckBox("선택", "선택", true); // 체크박스 컬럼에 대해 명칭으로 관리
+//	        			_viewManager.addColumnString("검사", "검사", false); // 부가적인 컬럼 설정
+        				ic=0;
 	        			for(Cell cell: row) {
 	        				colName = dataFormatter.formatCellValue(cell);
-		                	_viewManager.addColumnString(colName, colName, false);
-		                	cols.add(colName);
+//	        				colName = cell.getStringCellValue();
+			                cols.add(colName);
+			                
+			                switch (ic) {
+			                case 0:
+			                	_viewManager.addColumnInteger(colName,colName, false);
+			                	break;
+			                case 1:
+			                	_viewManager.addColumnCheckBox(colName,colName, true);
+			                	break;
+			                default:
+			                	_viewManager.addColumnString(colName,colName, false);
+			                }
+			                ic++;
 	        			}
-	        			_viewManager.addColumnString("검사", "검사", false); // 부가적인 컬럼 설정
         			}
         			else {
+        				//_viewManager.newRowData();
         				RowData rowData = new RowData();
-        				rowData.setValueInteger("번호", iR);
-        				rowData.setValueBoolean("선택", false); iC++;
-        				iC = 0;
-	        			for(Cell cell: row) {
-	                        String cellValue = dataFormatter.formatCellValue(cell);
-	        				rowData.setValueString(cols.get(iC++), cellValue);
+        				ic=0;
+        				for(Cell cell : row) {
+//	                        String cellValue = dataFormatter.formatCellValue(cell); //수식을 그대로 읽음
+//	                        rowData.setValue(cols.get(iC++), cellValue);
+	                        
+			                switch (ic) {
+			                case 0:
+			                	rowData.setValueInteger(cols.get(ic), (int) cell.getNumericCellValue());
+			                	break;
+			                case 1:
+			                	rowData.setValueBoolean(cols.get(ic), cell.getBooleanCellValue());
+			                	break;
+			                default:
+			                	rowData.setValueString(cols.get(ic), cell.getStringCellValue());
+			                }
+			                ic++;
+			                
+			                //cell.setCellValue("xxx");
 	        			}
-	        			rowData.setValueString("검사", "-"); // 부가적인 컬럼에 초기값 설정
         				_viewManager.addRowData(rowData);
         			}
-        			iR++;
+        			ir++;
                 }
         		//_tvObjectList.setItems(rowList);
         		_viewManager.setTableViewItems();
         		_viewManager.getTableView().getSelectionModel().setCellSelectionEnabled(true);
-        		
+        		_viewManager.getTableView().getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+        		//workbook.write(new FileOutputStream(file));
         		workbook.close();
         		
         	} catch (Exception ex) {
@@ -194,8 +205,6 @@ public class ObjectList {
 	}
 	
 	
-	
-	
     @FXML
     public void onClickObjectList(MouseEvent event)
     {
@@ -210,7 +219,7 @@ public class ObjectList {
     			//System.out.println(event.getTarget().getClass().getSimpleName());
     			chagneCheckStatus();
         	} else if(event.getClickCount() == 2) {
-        		showObjectText();
+        		showObjectText(false);
         	} else {
         		if (_contextMenu != null && _contextMenu.isShowing()) {
         			_contextMenu.hide();
@@ -232,68 +241,51 @@ public class ObjectList {
         
     }
 
-    private void showObjectText() {
+    private void showObjectText(boolean bBeautifulShow) {
+    	String strText="";
     	RowData rowData = _tvObjectList.getSelectionModel().getSelectedItem();
-		String sOwner;
-		
-		String sDB = rowData.getValueString("소분류");
-		String sObjectName = rowData.getValueString("프로그램ID").toUpperCase();
+	
+		String sDBType = rowData.getValueString("DBMS");
+		String sDBConn = rowData.getValueString("SOURCE");
+		String sSchema = rowData.getValueString("SCHEMA");
 		String sObjectType = rowData.getValueString("중분류").toUpperCase();
+		String sObjectName = rowData.getValueString("프로그램ID").toUpperCase();
+		
+		System.out.println(String.format("%s,%s,%s,%s,%s", sDBType, sDBConn, sSchema, sObjectType, sObjectName));
+		DBObjectWork dbo = new DBObjectWork(sDBConn);
+		System.out.println(dbo.toString());
 
-		if (sDB.equalsIgnoreCase("ORACLE")) {
-			sOwner = "DBENURI";
-			//DBObjectWork dbo = new DBObjectWork(DBMS_TYPE.ORACLE, "jdbc:oracle:thin:@//xxx.xxx.xxx.xxx:prot/dbname", "user","pass");
-			DBObjectWork dbo = new DBObjectWork("ENURI_TEST");
-			String strText = dbo.getOracleText(sOwner, sObjectName, sObjectType);
-			dbo.closeAll();
-			_mainApp.showViewSourceDialog(strText);
+		if (sDBType.equalsIgnoreCase("ORACLE")) {
+			strText = dbo.getOracleText(sSchema, sObjectName, sObjectType);
 		}
-		else if(sDB.equalsIgnoreCase("MS-SQL")) {
-			sOwner = "ELOC2001";
-			//DBObjectWork dbo = new DBObjectWork(DBMS_TYPE.MSSQL, "jdbc:sqlserver://x.x.x.x:port;instanceName=xx;databaseName=xx;", "user","pass");
-			DBObjectWork dbo = new DBObjectWork("MPDB_TEST");
-			String strText = dbo.getMSSQLText("ELOC2001", "dbo", sObjectName, sObjectType);
-			dbo.closeAll();
+		else if(sDBType.equalsIgnoreCase("MS-SQL")) {
+			strText = dbo.getMSSQLText(sSchema, "dbo", sObjectName, sObjectType);
+		}
+		
+		dbo.closeAll();
+		if(bBeautifulShow) {
+			_mainApp.showViewSourceExDialog(strText);
+		} 
+		else {
 			_mainApp.showViewSourceDialog(strText);
 		}
     }
 
-    private void showObjectTextEx() {
-    	RowData rowData = _tvObjectList.getSelectionModel().getSelectedItem();
-    	if(rowData == null) return;
-		String sOwner;
-		
-		String sDB = rowData.getValueString("소분류");
-		String sObjectName = rowData.getValueString("프로그램ID").toUpperCase();
-		String sObjectType = rowData.getValueString("중분류").toUpperCase();
-		
-		if (sDB.equalsIgnoreCase("ORACLE")) {
-			sOwner = "DBENURI";
-			//DBObjectWork dbo = new DBObjectWork(DBMS_TYPE.ORACLE, "jdbc:oracle:thin:@//xxx.xxx.xxx.xxx:prot/dbname", "user","pass");
-			DBObjectWork dbo = new DBObjectWork("ENURI_TEST");
-			String strText = dbo.getOracleText(sOwner, sObjectName, sObjectType);
-			dbo.closeAll();
-			_mainApp.showViewSourceExDialog(strText);
-		}
-		else if(sDB.equalsIgnoreCase("MS-SQL")) {
-			sOwner = "ELOC2001";
-			//DBObjectWork dbo = new DBObjectWork(DBMS_TYPE.MSSQL, "jdbc:sqlserver://x.x.x.x:port;instanceName=xx;databaseName=xx;", "user","pass");
-			DBObjectWork dbo = new DBObjectWork("MPDB_TEST");
-			String strText = dbo.getMSSQLText("ELOC2001", "dbo", sObjectName, sObjectType);
-			dbo.closeAll();
-			_mainApp.showViewSourceExDialog(strText);
-		}
-    }
     private void chagneCheckStatus() {
-    	RowData rowData = _tvObjectList.getSelectionModel().getSelectedItem();
-//    	System.out.println("begin..." + rowData.getValueBoolean(0));
-    	rowData.setBooleanReverse(_viewManager.getColumnIndex("선택"));
-//    	System.out.println("end  ..." + rowData.getValueBoolean(0));
-    	//RowData.set(0, String.valueOf(!Boolean.valueOf(rowData.get(0))));
-     	_tvObjectList.refresh();
-     	
-     	
+    	ObservableList<RowData> rows = _tvObjectList.getSelectionModel().getSelectedItems();
+    	int index = _viewManager.getColumnIndex("선택");
+    	rows.forEach(row -> row.setBooleanReverse(index));
+    	_tvObjectList.refresh();
     }
+
+//    private void chagneCheckStatusOld() {
+//    	RowData rowData = _tvObjectList.getSelectionModel().getSelectedItem();
+////    	System.out.println("begin..." + rowData.getValueBoolean(0));
+//    	rowData.setBooleanReverse(_viewManager.getColumnIndex("선택"));
+////    	System.out.println("end  ..." + rowData.getValueBoolean(0));
+//    	//RowData.set(0, String.valueOf(!Boolean.valueOf(rowData.get(0))));
+//     	_tvObjectList.refresh();
+//    }
     
     private void checkListAll() {
     	ObservableList<RowData> olist = (ObservableList<RowData>)_tvObjectList.getItems();
@@ -326,7 +318,7 @@ public class ObjectList {
 				new EventHandler<ActionEvent>() {
 					@Override
 					public void handle(ActionEvent event ) {
-						showObjectTextEx();
+						showObjectText(true);
 					}
 				}
 			);

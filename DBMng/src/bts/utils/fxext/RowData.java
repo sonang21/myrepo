@@ -3,9 +3,11 @@ package bts.utils.fxext;
 import java.util.ArrayList;
 
 import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -72,27 +74,33 @@ public class RowData {
 		_cols.add(new Column(colName,  oValue));
 	}
 	
-	
-	public void setValueInteger(int index, Integer iValue) {
-		setValue(index, iValue);
+	public void setValueInteger(int index, Integer value) {
+		setValue(index, value);
 	}	
-	public void setValueInteger(String colName, Integer iValue) {
-		setValue(colName, iValue);
+	public void setValueInteger(String colName, Integer value) {
+		setValue(colName, value);
 	}
 	
-	public void setValueString(int index, String sValue) {
-		setValue(index,  sValue);
-	}
-	public void setValueString(String colName, String sValue) {
-		setValue(colName,  sValue);
-	}
-	
-	
-	public void setValueBoolean(int index, Boolean bValue) {
-		setValue(index,  bValue);
+	public void setValueDouble(int index, Double value) {
+		setValue(index, value);
 	}	
-	public void setValueBoolean(String colName, Boolean bValue) {
-		setValue(colName,  bValue);
+	public void setValueDouble(String colName, Double value) {
+		setValue(colName, value);
+	}
+	
+	public void setValueString(int index, String value) {
+		setValue(index, value);
+	}
+	public void setValueString(String colName, String value) {
+		setValue(colName, value);
+	}
+	
+	
+	public void setValueBoolean(int index, Boolean value) {
+		setValue(index, value);
+	}	
+	public void setValueBoolean(String colName, Boolean value) {
+		setValue(colName, value);
 	}
 	
 	public void setBooleanReverse(int index) {
@@ -125,6 +133,13 @@ public class RowData {
 	public Integer getValueInteger(String colName) {
 		return (Integer) getValue(colName);
 	}
+
+	public Double getValueDouble(int index) {
+		return (Double) getValue(index);
+	}
+	public Double getValueDouble(String colName) {
+		return (Double) getValue(colName);
+	}
 	
 	
 	public String getValueString (int index) {
@@ -151,12 +166,19 @@ public class RowData {
 			return (Boolean)false;
 		}
 	}
-	
+
 	public IntegerProperty getIntegerProperty(int index) {
 		return new SimpleIntegerProperty(getValueInteger(index));
 	}
 	public IntegerProperty getIntegerProperty(String colName) {
 		return new SimpleIntegerProperty(getValueInteger(colName));
+	}
+
+	public DoubleProperty getDoubleProperty(int index) {
+		return new SimpleDoubleProperty(getValueDouble(index));
+	}
+	public DoubleProperty getDoubleProperty(String colName) {
+		return new SimpleDoubleProperty(getValueDouble(colName));
 	}
 
 	public StringProperty getStringProperty(int index) {

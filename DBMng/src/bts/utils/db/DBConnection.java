@@ -34,9 +34,8 @@ public class DBConnection {
 	public static enum DBMS_TYPE { ORACLE, MSSQL };
 	private static Vector<String> _vsDriverList = new Vector<String>();
 	
-	private static String _sConfigFile;
+	private static String _sConfigFile = "./conf/DBConfig.xml";
 	private String _sConnName = null;
-	
 	private String _sDBMS = null;
 	private String _sDriver = null;
 	private String _sDriverURL = null;
@@ -48,9 +47,8 @@ public class DBConnection {
 
 	
 	public DBConnection(String sConnectionName) {
-		_sConfigFile = "./conf/DBConfig.xml";
-		_sConnName = sConnectionName;
-		setConnection(_sConnName);
+		setConnectionConfig(sConnectionName);
+//		System.out.println("Constructor: " + toString());
 	}
 	
 	public DBConnection(DBMS_TYPE dbType, String sURL, String sUser, String sPassword)
@@ -78,9 +76,15 @@ public class DBConnection {
 	}
 	
 	
-	public Connection getConnection() { return _oConn; }
 	public String getConnectionName() { return _sConnName; }
-	public void setConnectionName(String sConnectionName) { _sConnName = sConnectionName; }	
+	public Connection getConnection() { return _oConn; }
+	public void setConnectionName(String sConnectionName) { _sConnName = sConnectionName; }
+	
+	@Override
+	public String toString() {
+		return String.format("DBConnection: name=%s, dbms=%s, driver=%s, driverURL=%s, URL=%s, user=%s(%s)"
+				, _sConnName, _sDBMS, _sDriver, _sDriverURL, _sURL, _sUser, _sPassword);
+	}
 	
  
 	private void loadDriver(String sDriverClassName, String sDriverFileName)
@@ -136,21 +140,35 @@ public class DBConnection {
 	}
 
 	public Connection dbConnect() {
+		if(_oConn != null) {
+			dbClose();
+		}
 		loadDriver(_sDriver, _sDriverURL);
 		connect(_sURL, _sUser, _sPassword);
 		return _oConn;
 	}
 	
-	public void setConnection(String sConnName) 
+	public void dbClose() {
+		if(_oConn != null ) {
+			try {
+				if(! _oConn.isClosed()) _oConn.close();
+				_oConn = null;
+			}
+			catch (Exception ex) {
+				ex.printStackTrace();
+			}
+		}
+	}
+	
+	public void setConnectionConfig(String sConnName) 
 	{
 		_sConnName = sConnName;
-		_sDBMS 	= getConfig(sConnName, "dbms");
-		_sDriver = getConfig(sConnName, "driver");
-		_sDriverURL = getConfig(sConnName, "driver_file");
-		_sURL = getConfig(sConnName, "url");
-//		_sCheckQuery = getConfig(sConnName, "check_query");
-		_sUser = getConfig(sConnName, "user");
-		_sPassword = getConfig(sConnName, "pass");
+		_sDBMS 	= getConfigOf(sConnName, "dbms");
+		_sDriver = getConfigOf(sConnName, "driver");
+		_sDriverURL = getConfigOf(sConnName, "driver_file");
+		_sURL = getConfigOf(sConnName, "url");
+		_sUser = getConfigOf(sConnName, "user");
+		_sPassword = getConfigOf(sConnName, "pass");
 		
 		if (_sPassword == null) 
 		{ 
@@ -160,25 +178,30 @@ public class DBConnection {
 		{ 
 			_sPassword = Encryption.decrypt(_sPassword);
 		}
-		
-//		try {
-//			m_nInitConnections = Integer.parseInt(getConfig(sConnName, "initConn"));
-//			m_nMaxConnections = Integer.parseInt(getConfig(sConnName, "maxConn"));
-//			m_nWaitSeconds = Integer.parseInt(getConfig(sConnName, "waitSec"));
-//		}
-//		catch (Exception e) 
-//		{
-//			m_logFile.logWrite("Connection : " + sConnName);
-//			m_logFile.logWrite(e);
-//			System.err.println("\nERROR: Connection fail : " + sConnName);
-//			e.printStackTrace();
-//			System.exit(1);
-//		}
 	}
 
+	/**
+	 * configuration/connections/database에서 element name이 일치하는 노드를 찾아 해당 노드의 지정된 요소(sConfigName)의 값을 반환
+	 * <database><name>dbname</name>... 형태로 지정된 요소
+	 * @param sConnName
+	 * @param sConfigName
+	 * @return
+	 */
 	private static String getConfig(String sConnName, String sConfigName) {
 		//return getConfig(sConnName, sConfigName, m_sConfigFile);
 		return getXmlNodeValue("/configurations/connections/database[name='"+ sConnName +"']/" + sConfigName);
+	}
+
+	/**
+	 * configuration/connections/database에서 속성 name이 일치하는 노드를 찾아 해당 노드의 지정된 요소(sConfigName)의 값을 반환
+	 * <database name="dbname">... 형태로 지정된 요소
+	 * @param sConnName
+	 * @param sConfigName
+	 * @return
+	 */
+	private static String getConfigOf(String sConnName, String sConfigName) {
+		//return getConfig(sConnName, sConfigName, m_sConfigFile);
+		return getXmlNodeValue("/configurations/connections/database[@name='"+ sConnName +"']/" + sConfigName);
 	}
 
 	public static String getXmlNodeValue(String sNodePath) 
@@ -215,10 +238,13 @@ public class DBConnection {
 	
 	
 	public static void main(String args[]) {
-		unitTest0001();
+		test003();
 	}
 	
-	private static void unitTest0001() {
+	private static void test003() {
+		System.out.println(DBConnection.getConfigOf("SYSLOGDB", "version"));
+	}
+	private static void test002() {
 //		String sDriver = "oracle.jdbc.driver.OracleDriver";
 //		String sDriverFile = ""; 
 //		String sDriverFile = "C:\\2.MyDev\\workspace\\lib\\ojdbc6.jar";
@@ -246,7 +272,7 @@ public class DBConnection {
 
 	}
 	
-	public static void test(String sTest) {
+	public static void test001(String sTest) {
 		System.out.println(String.valueOf(sTest==null || sTest.isEmpty()));
 		System.out.println(sTest.isEmpty());
 	}

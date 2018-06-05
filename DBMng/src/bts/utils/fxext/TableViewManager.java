@@ -4,6 +4,7 @@ import java.util.ArrayList;
 //import java.util.HashMap;
 //import java.util.Objects;
 
+import bts.utils.fxext.RowMeta.DATATYPE;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
@@ -17,10 +18,12 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 
 public class TableViewManager {
+	 
 	private TableView<RowData> _tableView;
 	private ArrayList<RowMeta> _rowMeta = new ArrayList<>();
 
 	private ObservableList<RowData> _rows;
+	private RowData _rowData;
 	
 	public TableViewManager(TableView<RowData> tableView) {
 		setTableView(tableView, false);
@@ -52,7 +55,7 @@ public class TableViewManager {
 	 * @return boolean : 컬럼목록에 없어서 추가한 경우 true, 컬럼목록에 존재하여 추가하지 않은 경우 false
 	 */
 
-	private boolean addColumnList(String colName, String header, String type, boolean editable) {
+	private boolean addColumnList(String colName, String header, DATATYPE type, boolean editable) {
 		//if(_rowMeta.contains(colName))
 		for(RowMeta m : _rowMeta)
 		{
@@ -83,6 +86,15 @@ public class TableViewManager {
 		}
 	}
 	
+	private DATATYPE getColumnDataType(String colName) {
+		for(RowMeta m : _rowMeta) {
+			if(m.columnName.equalsIgnoreCase(colName)) {
+				return m.dataType;
+			}
+		}
+		return DATATYPE.NONE;
+	}
+	
 	@SuppressWarnings("unused")
 	private boolean setColumnName(int columnIndex, String colName) {
 		if(columnIndex < _rowMeta.size()) {
@@ -98,14 +110,35 @@ public class TableViewManager {
 	}
 	
 	public void addColumnInteger(int index, String header, boolean isEditable) {
-		addColumnInteger(String.valueOf(index), header, isEditable);
+		addColumnDouble(String.valueOf(index), header, isEditable);
 	}
 	public void addColumnInteger(String colName, String header, boolean isEditable) {
-		if(addColumnList(colName, header, "Integer", isEditable)) {
+		if(addColumnList(colName, header, DATATYPE.INTEGER, isEditable)) {
 			TableColumn<RowData, Number> col = new TableColumn<>(header);
 			col.setCellValueFactory(cellData -> cellData.getValue().getIntegerProperty(colName));
 			if (isEditable) {
 				col.setCellFactory(cellDataFeatures -> new NumberTableCell<Integer>(colName));
+				col.setOnEditCommit((CellEditEvent<RowData, Number> event) -> {
+					event.getRowValue().setValue(colName, event.getNewValue());
+				});
+				
+			}
+			ObservableList<RowData> rows = _tableView.getItems();
+			rows.forEach(row -> { row.setValueString(colName, ""); });
+			
+			_tableView.getColumns().add(col);		
+		}
+	}
+
+	public void addColumnDouble(int index, String header, boolean isEditable) {
+		addColumnDouble(String.valueOf(index), header, isEditable);
+	}
+	public void addColumnDouble(String colName, String header, boolean isEditable) {
+		if(addColumnList(colName, header, DATATYPE.DOUBLE, isEditable)) {
+			TableColumn<RowData, Number> col = new TableColumn<>(header);
+			col.setCellValueFactory(cellData -> cellData.getValue().getDoubleProperty(colName));
+			if (isEditable) {
+				col.setCellFactory(cellDataFeatures -> new NumberTableCell<Double>(colName));
 				col.setOnEditCommit((CellEditEvent<RowData, Number> event) -> {
 					event.getRowValue().setValue(colName, event.getNewValue());
 				});
@@ -123,7 +156,7 @@ public class TableViewManager {
 		addColumnString(String.valueOf(index), header, isEditable);
 	}
 	public void addColumnString(String colName, String header, boolean isEditable) {
-		if(addColumnList(colName, header, "String", isEditable)) {
+		if(addColumnList(colName, header, DATATYPE.STRING, isEditable)) {
 			TableColumn<RowData, String> col = new TableColumn<RowData, String>(header);
 			col.setCellValueFactory(cellData -> cellData.getValue().getStringProperty(colName));
 			if (isEditable) {
@@ -144,7 +177,7 @@ public class TableViewManager {
 		addColumnCheckBox(String.valueOf(index), header, isEditable);
 	}	
 	public void addColumnCheckBox(String colName, String header, boolean isEditable) {
-		if(addColumnList(colName, header, "Boolean", isEditable)) {
+		if(addColumnList(colName, header, DATATYPE.BOOLEAN, isEditable)) {
 			TableColumn<RowData, Boolean> col = new TableColumn<RowData, Boolean>(header);
 			col.setEditable(true);
 			col.setCellValueFactory(cellData -> cellData.getValue().getBooleanProperty(colName));
@@ -284,7 +317,12 @@ public class TableViewManager {
 				if(event.getCode() == KeyCode.SPACE) {
 					TableViewFocusModel<RowData> m = _tableView.getFocusModel();
 					if (m != null && m.getFocusedCell().getColumn() == columnIndex) {
-						_tableView.getItems().get(m.getFocusedIndex()).setBooleanReverse(columnIndex);
+						// 현재의 셀만 변경함
+						//_tableView.getItems().get(m.getFocusedIndex()).setBooleanReverse(columnIndex);
+						//선택된 셀을 변경함
+						_tableView.getSelectionModel().getSelectedItems().forEach(row -> row.setBooleanReverse(columnIndex));
+						_tableView.getSelectionModel().getSelectedCells().forEach(cell -> cell.getTableColumn().setVisible(true));
+						
 
 //						String colName = getColumnName(columnIndex);
 //						boolean bChecked = _tableView.getItems().get(m.getFocusedIndex()).getValueBoolean(colName);
@@ -295,8 +333,8 @@ public class TableViewManager {
 								+ ", value:" + _tableView.getItems().get(m.getFocusedIndex()).getValueBoolean(columnIndex));
 
 						// 선택셀이 바뀌지 않은 상태에서 스페이스 누를 때 내부적인 값이 변하나, 디스플레이가 바뀌지 않는 문제  visiable 변경 또는 refresh 호출이 필요함 
-						m.getFocusedCell().getTableColumn().setVisible(false);
-						m.getFocusedCell().getTableColumn().setVisible(true);
+//						m.getFocusedCell().getTableColumn().setVisible(false);
+//						m.getFocusedCell().getTableColumn().setVisible(true);
 						_tableView.refresh();
 						event.consume();
 					}
@@ -304,6 +342,38 @@ public class TableViewManager {
 				
 			}
 		});
+	}
+	
+	public RowData newRowData() {
+		if(_rowData == null) {
+			_rowData = new RowData();
+		}
+		return _rowData;
+	}
+	
+	public void setValue(String colName, String value) {
+		try {
+		switch (getColumnDataType(colName)) {
+			case STRING :
+				_rowData.setValueString(colName, value); 
+				break;
+			case DOUBLE :
+				_rowData.setValueDouble(colName, Double.valueOf(value));
+				break;
+			case BOOLEAN :
+				_rowData.setValueBoolean(colName, Boolean.valueOf(value));
+				break;
+			default :
+				_rowData.setValue(colName, value);
+		}
+		} 
+		catch (Exception ex) {
+			System.err.println("TableViewManager.setValue() : colName=" + colName + ", value=" + value);
+			ex.printStackTrace();
+		}
+	}
+	public void addRowData() {
+		addRowData(_rowData);
 	}
 
 }

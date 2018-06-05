@@ -10,13 +10,22 @@ import bts.utils.db.DBConnection.DBMS_TYPE;
 public class DBObjectWork {
 	
 	private Connection _oConn = null;
+	private DBConnection _dbconnection = null;
 	
 	public DBObjectWork(String sConnectionName) {
-		_oConn = (new DBConnection(sConnectionName)).dbConnect();
+		_dbconnection = new DBConnection(sConnectionName);
+		_oConn = _dbconnection.dbConnect();
 	}
 	
 	public DBObjectWork(DBMS_TYPE dbmsType, String sURL, String sUser, String sPassword) {
-		_oConn = (new DBConnection(dbmsType, sURL, sUser, sPassword)).dbConnect();
+		
+		_dbconnection = new DBConnection(dbmsType, sURL, sUser, sPassword);
+		_oConn = _dbconnection.dbConnect();
+	}
+	
+	@Override
+	public String toString() {
+		return "DBObjectWork:" + _dbconnection.toString();
 	}
 	
 	public String getOracleText(String sOwner, String sObjectName, String sObjectType) {
@@ -104,12 +113,7 @@ public class DBObjectWork {
 	
 
 	public void closeAll() {
-		try {
-			if(_oConn != null && _oConn.isClosed()) _oConn.close();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+		_dbconnection.dbClose();
 	}
-	
 
 }
