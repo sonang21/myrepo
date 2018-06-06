@@ -37,6 +37,7 @@ import java.util.ArrayList;
 
 //@SuppressWarnings({"unchecked","rawtypes"})
 public class ObjectList {
+	enum enYN { Y, N};
 	private MainApp _mainApp;
 	private ContextMenu _contextMenu;
 	@FXML
@@ -55,10 +56,8 @@ public class ObjectList {
 			if(event.getCode() == KeyCode.SPACE) {
 				//_tvObjectList.getSelectionModel().getSelectedItem();
 				chagneCheckStatus();
+				event.consume();
 			}
-			
-			event.consume();
-			
 		});
 	}
 	
@@ -149,6 +148,10 @@ public class ObjectList {
 			                case 1:
 			                	_viewManager.addColumnCheckBox(colName,colName, true);
 			                	break;
+			                case 2:
+//			                	_viewManager.addColumnComboBox(colName,colName, true, enYN.class);
+			                	_viewManager.addColumnComboBox(colName,colName, true, new String[]{"Y","N"});
+			                   	break;
 			                default:
 			                	_viewManager.addColumnString(colName,colName, false);
 			                }
@@ -183,6 +186,7 @@ public class ObjectList {
                 }
         		//_tvObjectList.setItems(rowList);
         		_viewManager.setTableViewItems();
+        		_viewManager.setEditable(true);
         		_viewManager.getTableView().getSelectionModel().setCellSelectionEnabled(true);
         		_viewManager.getTableView().getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         		//workbook.write(new FileOutputStream(_file));
@@ -205,6 +209,7 @@ public class ObjectList {
 	
 	public void workbookSave() {
 		ObservableList<RowData> rows = _tvObjectList.getItems();
+		int iColumnCount = _tvObjectList.getColumns().size();
 		if (rows == null) {
     		Alert alert = new Alert(AlertType.WARNING);
     		alert.initOwner(_mainApp.getPrimaryStage());
@@ -233,19 +238,25 @@ public class ObjectList {
 			Sheet sheet = workbook.getSheetAt(0);
 			
 			for(int r=0; r < rows.size(); r++) {
-				for(int c=0; c < rows.get(r).getColumnCount(); c++) {
+				for(int c=0; c < iColumnCount; c++) {
 					Object value = rows.get(r).getValue(c);
-					if(value instanceof String) {
-						sheet.getRow(r+1).getCell(c).setCellValue((String)value);
+					try {
+						if(value instanceof String) {
+							sheet.getRow(r+1).getCell(c).setCellValue((String)value);
+						}
+						else if(value instanceof Boolean) {
+							sheet.getRow(r+1).getCell(c).setCellValue((Boolean)value);
+						}
+						else if (value instanceof Integer) {
+							sheet.getRow(r+1).getCell(c).setCellValue((Integer)value);
+						}
+						else {
+							sheet.getRow(r+1).getCell(c).setCellValue((String)value);
+						}
 					}
-					else if(value instanceof Boolean) {
-						sheet.getRow(r+1).getCell(c).setCellValue((Boolean)value);
-					}
-					else if (value instanceof Integer) {
-						sheet.getRow(r+1).getCell(c).setCellValue((Integer)value);
-					}
-					else {
-						sheet.getRow(r+1).getCell(c).setCellValue((String)value);
+					catch (Exception ex){
+						System.out.print(String.format("[%d,%d] %s", r, c, value.toString()));
+						ex.printStackTrace();
 					}
 				}
 			}
@@ -273,9 +284,11 @@ public class ObjectList {
     			//event.getTarget().getClass().getSimpleName().equalsIgnoreCase("TableColumnHeader")
     			//System.out.println(event.getTarget().getClass().getSimpleName());
     			chagneCheckStatus();
-        	} else if(event.getClickCount() == 2) {
-        		showObjectText(false);
-        	} else {
+        	} 
+//    		else if(event.getClickCount() == 2) {
+//        		showObjectText(false);
+//        	} 
+    		else {
         		if (_contextMenu != null && _contextMenu.isShowing()) {
         			_contextMenu.hide();
         		}
@@ -284,16 +297,6 @@ public class ObjectList {
     	} else if(event.getButton() == MouseButton.SECONDARY) {
     		showContextMenu(event);
     	}
-    	
-
-//        double headerHeight = _objectList.lookup(".column-header-background").getBoundsInLocal().getHeight();
-//
-//        // Check if the clicked position's Y value is less than or equal to the height of the header.
-//        if (headerHeight <= event.getY()) {
-//        	//Clicked on the header!
-//        	return;
-//        }
-        
     }
 
     private void showObjectText(boolean bBeautifulShow) {

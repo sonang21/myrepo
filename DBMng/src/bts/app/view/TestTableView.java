@@ -31,12 +31,13 @@ public class TestTableView {
 		tvMgr.addColumnString("value", "Value", false);
 		tvMgr.addColumnString("test", "Test", false);
 		tvMgr.addColumnCheckBox("chk", "Select", true);
+		tvMgr.addColumnComboBox("list", "YN", true, new String[] {"Y","N"});
 		
 		
-		tvMgr.addRowStrings("abc", "val a", "test A");
-		tvMgr.addRowStrings("bde", "val b", "test B");
-		tvMgr.addRowStrings("cfg", "val c", "test C");
-		tvMgr.addRowObjects("obk", "val o", "test O", true);
+//		tvMgr.addRowStrings("abc", "val a", "test A");
+//		tvMgr.addRowStrings("bde", "val b", "test B");
+//		tvMgr.addRowStrings("cfg", "val c", "test C");
+		tvMgr.addRowObjects("obk", "val o", "test O", true,  "Y");
 
 		tvMgr.setTableViewItems();
 		_tableView.setEditable(true);
