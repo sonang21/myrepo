@@ -1,5 +1,7 @@
 package bts.utils.fxext;
 
+
+
 public class RowMeta {
 	public static enum DATATYPE { STRING, INTEGER, DOUBLE, BOOLEAN, OBJECT, NONE };
 	public int columnIndex;

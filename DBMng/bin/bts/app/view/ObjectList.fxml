@@ -29,7 +29,7 @@
                         <ButtonBar prefHeight="40.0" prefWidth="512.0" BorderPane.alignment="CENTER">
                           <buttons>
                             <Button alignment="TOP_CENTER" mnemonicParsing="false" onAction="#onButtonOpen" text="Open" />
-                              <Button alignment="TOP_CENTER" mnemonicParsing="false" onAction="#onButtonClose" text="Close" />
+                              <Button alignment="TOP_CENTER" mnemonicParsing="false" onAction="#onButtonSave" text="Save" />
                           </buttons>
                            <padding>
                               <Insets right="10.0" />

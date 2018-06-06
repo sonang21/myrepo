@@ -14,10 +14,11 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 
 public class RowData {
+	
 	public class Column {
 		String name;
 		Object value;
-		
+
 		public Column(String strName, Object objValue) {
 			this.name = strName;
 			this.value = objValue;
@@ -34,6 +35,9 @@ public class RowData {
 		}
 	}
 	
+	public int getColumnCount() {
+		return _cols.size();
+	}
 	
 	public int getIndex(String colName) {
 		for (int i=0; i <_cols.size(); i++) {
@@ -110,6 +114,8 @@ public class RowData {
 		setValue(colName,  ! getValueBoolean(colName));
 	}
 	
+//	@SuppressWarnings("unchecked")
+//	public <T> T getValue(int index) {
 	public Object getValue(int index) {
 		if (index < _cols.size()) {
 			return _cols.get(index).value;
@@ -118,6 +124,9 @@ public class RowData {
 			return null;
 		}
 	}
+	
+//	@SuppressWarnings("unchecked")
+//	public <T> T getValue(String colName) {
 	public Object getValue(String colName) {
 		for(Column c : _cols) {
 			if (c.name.equalsIgnoreCase(colName)) {
@@ -128,7 +137,7 @@ public class RowData {
 	}
 
 	public Integer getValueInteger(int index) {
-		return (Integer) getValue(index);
+		return (Integer)getValue(index);
 	}
 	public Integer getValueInteger(String colName) {
 		return (Integer) getValue(colName);
@@ -143,10 +152,10 @@ public class RowData {
 	
 	
 	public String getValueString (int index) {
-		return (String) getValue(index);
+		return getValue(index).toString();
 	}
 	public String getValueString(String colName) {
-		return (String) getValue(colName);
+		return getValue(colName).toString();
 	}
 
 	public Boolean getValueBoolean (int index) {

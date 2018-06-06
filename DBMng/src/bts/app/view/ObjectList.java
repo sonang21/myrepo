@@ -43,6 +43,7 @@ public class ObjectList {
 	private TableView<RowData> _tvObjectList;
 	
 	private TableViewManager _viewManager;
+	private File _file;
 	
 	/**
      * 컨트롤러 클래스를 초기화한다.
@@ -103,14 +104,14 @@ public class ObjectList {
         fileChooser.setInitialDirectory(new File("C:\\Temp\\"));
         
         // File Dialog를 보여준다.
-        File file = fileChooser.showOpenDialog(_mainApp.getPrimaryStage());
+        _file = fileChooser.showOpenDialog(_mainApp.getPrimaryStage());
 
-        if (file != null) {
-        	System.out.println("File choosed: " + file.getName());
+        if (_file != null) {
+        	System.out.println("File choosed: " + _file.getName());
         	
         	try {
-//        		Workbook workbook = WorkbookFactory.create(file);
-        		Workbook workbook = WorkbookFactory.create(file, null, true);  // file, passwd, readonly
+        		//Workbook workbook = WorkbookFactory.create(_file);
+        		Workbook workbook = WorkbookFactory.create(_file, null, true);  // _file, passwd, readonly
         		System.out.println("Workbook has " + workbook.getNumberOfSheets() + " Sheets!");
         		
         		for(Sheet sheet : workbook) {
@@ -184,7 +185,7 @@ public class ObjectList {
         		_viewManager.setTableViewItems();
         		_viewManager.getTableView().getSelectionModel().setCellSelectionEnabled(true);
         		_viewManager.getTableView().getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-        		//workbook.write(new FileOutputStream(file));
+        		//workbook.write(new FileOutputStream(_file));
         		workbook.close();
         		
         	} catch (Exception ex) {
@@ -194,9 +195,7 @@ public class ObjectList {
                 alert.setHeaderText("");
                 alert.setContentText(ex.getMessage());
                 alert.showAndWait();
-
-        		ex.printStackTrace();
-        		
+        		ex.printStackTrace();    		
         	}
         	
         	
@@ -204,6 +203,62 @@ public class ObjectList {
 
 	}
 	
+	public void workbookSave() {
+		ObservableList<RowData> rows = _tvObjectList.getItems();
+		if (rows == null) {
+    		Alert alert = new Alert(AlertType.WARNING);
+    		alert.initOwner(_mainApp.getPrimaryStage());
+    		alert.setTitle("Workbook Save");
+    		alert.setHeaderText("Save Error");
+    		alert.setContentText("저장할 데이터가 없습니다.");
+    		alert.showAndWait();
+		}
+		try {
+	        FileChooser fileChooser = new FileChooser();
+
+	        // 확장자 필터를 설정한다.
+	        FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter(
+	                "Excel files (*.xls)", "*.xls");
+	        fileChooser.getExtensionFilters().add(extFilter);
+	        fileChooser.setInitialDirectory(_file.getParentFile());
+	        fileChooser.setInitialFileName(_file.getName());
+	        
+	        System.out.println(_file.getAbsolutePath());
+	        
+	        // File Dialog를 보여준다.
+	        File fileWrite = fileChooser.showSaveDialog(_mainApp.getPrimaryStage());
+	        if(fileWrite == null) return;
+	        
+			Workbook workbook = WorkbookFactory.create(_file, null, true);
+			Sheet sheet = workbook.getSheetAt(0);
+			
+			for(int r=0; r < rows.size(); r++) {
+				for(int c=0; c < rows.get(r).getColumnCount(); c++) {
+					Object value = rows.get(r).getValue(c);
+					if(value instanceof String) {
+						sheet.getRow(r+1).getCell(c).setCellValue((String)value);
+					}
+					else if(value instanceof Boolean) {
+						sheet.getRow(r+1).getCell(c).setCellValue((Boolean)value);
+					}
+					else if (value instanceof Integer) {
+						sheet.getRow(r+1).getCell(c).setCellValue((Integer)value);
+					}
+					else {
+						sheet.getRow(r+1).getCell(c).setCellValue((String)value);
+					}
+				}
+			}
+			
+			workbook.write(new FileOutputStream(fileWrite));
+			workbook.close();
+		}
+		catch (Exception ex) {
+			ex.printStackTrace();
+		}
+		
+		
+	}
 	
     @FXML
     public void onClickObjectList(MouseEvent event)
@@ -304,8 +359,14 @@ public class ObjectList {
 	
 	@FXML
 	public void onButtonClose() {
+		workbookSave();
 		_mainApp.getPrimaryStage().close();
 		System.exit(0);
+	}
+
+	@FXML
+	public void onButtonSave() {
+		workbookSave();
 	}
 	
 	private void showContextMenu(MouseEvent event) {
