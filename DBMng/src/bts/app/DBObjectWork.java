@@ -25,7 +25,7 @@ public class DBObjectWork {
 	
 	@Override
 	public String toString() {
-		return "DBObjectWork:" + _dbconnection.toString();
+		return "DBObjectWork -> " + _dbconnection.toString();
 	}
 	
 	public String getOracleText(String sOwner, String sObjectName, String sObjectType) {

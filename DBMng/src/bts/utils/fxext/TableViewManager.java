@@ -3,11 +3,14 @@ package bts.utils.fxext;
 import java.util.ArrayList;
 import java.util.EnumSet;
 
+import org.apache.poi.ss.formula.functions.T;
+
 import bts.utils.fxext.RowMeta.DATATYPE;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TableColumn.CellEditEvent;
@@ -16,22 +19,25 @@ import javafx.scene.control.cell.CheckBoxTableCell;
 import javafx.scene.control.cell.ComboBoxTableCell;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 
 public class TableViewManager {
 	 
 	private TableView<RowData> _tableView;
-	private ArrayList<RowMeta> _rowMeta = new ArrayList<>();
+	private ArrayList<RowMeta> _rowMeta;
 
 	private ObservableList<RowData> _rows;
 	private RowData _rowData;
 	
 	public TableViewManager(TableView<RowData> tableView) {
-		setTableView(tableView, false);
+		this(tableView, false);
 	}
 
 	public TableViewManager(TableView<RowData> tableView, boolean clearColumn) {
 		setTableView(tableView, clearColumn);
+		_rowData = new RowData();
+		_rowMeta = new ArrayList<>();
 	}
 	
 	public TableView<RowData> getTableView() {
@@ -176,7 +182,13 @@ public class TableViewManager {
 	
 	public void addColumnCheckBox(int index, String header, boolean isEditable) {
 		addColumnCheckBox(String.valueOf(index), header, isEditable);
-	}	
+	}
+	/**
+	 * checkBox의 경우 Cell이 아닌 checkBox 차체 클릭이 Cell로 전달되지 않고 내부만 처리되어 이벤트 강제 삽입 
+	 * @param colName
+	 * @param header
+	 * @param isEditable
+	 */
 	public void addColumnCheckBox(String colName, String header, boolean isEditable) {
 		if(addColumnList(colName, header, DATATYPE.BOOLEAN, isEditable)) {
 			TableColumn<RowData, Boolean> col = new TableColumn<RowData, Boolean>(header);
@@ -184,14 +196,104 @@ public class TableViewManager {
 			col.setCellValueFactory(cellData -> cellData.getValue().getBooleanProperty(colName));
 			if (isEditable) {
 				setCheckBoxColumnEvent(getColumnIndex(colName));
-				col.setCellFactory(CheckBoxTableCell.forTableColumn(col));
-//				col.setOnEditCommit(event -> {
-//					int ir = event.getTablePosition().getRow();
-//					int ic = event.getTablePosition().getColumn();
-//					_tableView.getItems().get(ir).setValueBoolean(ic, event.getNewValue());
-//					System.out.println(String.format("[%d, %d] %s", ir, ic, event.getNewValue()
-//							));
+				col.setCellFactory( cellDataFeatures -> {
+					CheckBoxTableCell<RowData, Boolean> cell = new CheckBoxTableCell<RowData, Boolean>() {
+						@Override
+						public void updateItem(Boolean item, boolean empty) {
+							super.updateItem(item, empty);
+							CheckBox cb = (CheckBox)getGraphic();
+							if(cb != null) {
+								cb.setOnAction(event -> {
+									getTableView().getSelectionModel().clearAndSelect(getIndex(), col);
+									//clearAndSelect()에 의해 setCheckBoxColumnEvent의 Mouse이벤트가 전달되어 처리되므로 별도 이벤트 처리 안함
+									//여기서 이벤트 처리할 경우 마지막에 event.consume() 추가 필요
+//									getTableView().getSelectionModel().getSelectedItem().setBooleanReverse(colName);
+									
+//									System.out.println(String.format("setOnAction(): %d, %s"
+//											, getIndex()
+//											, getTableView().getFocusModel().getFocusedCell()
+//											));
+								});
+							}
+							
+						}
+						
+					};
+					return cell;
+				});
+				
+				col.setOnEditCommit(event -> {
+					int ir = event.getTablePosition().getRow();
+					int ic = event.getTablePosition().getColumn();
+					_tableView.getItems().get(ir).setValueBoolean(ic, event.getNewValue());
+					System.out.println(String.format("addColumnCheckBox(): EditCommit [%d, %d] %s", ir, ic, event.getNewValue()
+							));
+				});
+//				col.setCellFactory(cellDataFeatures -> {
+//					CheckBoxTableCell<RowData, Boolean> cell = new CheckBoxTableCell<>();
+//					
+//					cell.addEventFilter(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent> () {
+//						@Override
+//						public void handle(MouseEvent event) {
+//							CheckBoxTableCell<RowData, Boolean> cb = (CheckBoxTableCell<RowData,Boolean>)event.getSource();
+//						}
+//					});
+//					return cell;
 //				});
+			}
+			else {
+				//변경이 안되도록 마우스, 키 이벤트를 모두 차단함
+				col.setCellFactory(cellDataFeatures -> {
+					CheckBoxTableCell<RowData, Boolean> cell = new CheckBoxTableCell<>();
+					cell.addEventFilter(KeyEvent.ANY, new EventHandler<KeyEvent> () {
+						@Override
+						public void handle(KeyEvent event) {
+							event.consume();
+						}
+					});
+					cell.addEventFilter(MouseEvent.ANY, new EventHandler<MouseEvent> () {
+						@Override
+						public void handle(MouseEvent event) {
+							event.consume();
+						}
+					});
+					cell.setEditable(false);
+					return cell;
+				});
+			}
+			
+			_tableView.getColumns().add(col);
+			
+			ObservableList<RowData> rows = _tableView.getItems();
+			rows.forEach(row -> { row.setValue(colName, false); });
+		}
+	}
+
+	public void addColumnCheckBoxOrigin(String colName, String header, boolean isEditable) {
+		if(addColumnList(colName, header, DATATYPE.BOOLEAN, isEditable)) {
+			TableColumn<RowData, Boolean> col = new TableColumn<RowData, Boolean>(header);
+			col.setEditable(isEditable);
+			col.setCellValueFactory(cellData -> cellData.getValue().getBooleanProperty(colName));
+			if (isEditable) {
+				setCheckBoxColumnEvent(getColumnIndex(colName));
+				col.setCellFactory(CheckBoxTableCell.forTableColumn(col));
+//				col.setCellFactory(param -> {
+//						CheckBoxTableCell<RowData, Boolean> cell = new CheckBoxTableCell<>();
+//						cell.setOnMouseClicked(event -> {
+//							System.out.println("click");
+//							
+//						});
+//					return cell;
+//				});
+
+				
+				col.setOnEditCommit(event -> {
+					int ir = event.getTablePosition().getRow();
+					int ic = event.getTablePosition().getColumn();
+					_tableView.getItems().get(ir).setValueBoolean(ic, event.getNewValue());
+					System.out.println(String.format("[%d, %d] %s", ir, ic, event.getNewValue()
+							));
+				});
 //				col.setCellFactory(cellDataFeatures -> {
 //					CheckBoxTableCell<RowData, Boolean> cell = new CheckBoxTableCell<>();
 //					
@@ -241,24 +343,12 @@ public class TableViewManager {
 			if (isEditable) {
 				ObservableList<String> olist = FXCollections.observableArrayList(list);
 				col.setCellFactory(ComboBoxTableCell.forTableColumn(olist));
-//				col.setCellFactory(param -> {
-//					ComboBoxTableCell<RowData, String> comboBoxTableCell = new ComboBoxTableCell<>(list);
-//					comboBoxTableCell.setPickOnBounds(true);
-//					comboBoxTableCell.updateSelected(true);
-//					return comboBoxTableCell;
-//				});
 				col.setOnEditCommit(event -> {
 					int ir = event.getTablePosition().getRow();
 					int ic = event.getTablePosition().getColumn();
 					
 					_tableView.getItems().get(ir).setValueString(ic, event.getNewValue());
-//					System.out.println(String.format("%d, %d, %s, %d = %d"
-//							, ir, ic, event.getNewValue()
-//							, _tableView.getColumns().size()
-//							, _tableView.getItems().get(0).getColumnCount()
-//					));
 				});
-//				System.out.println(String.format("%s, %s, %s, %s", colName, header, isEditable, list[0]));
 			}
 			else {
 				//변경이 안되도록 마우스, 키 이벤트를 모두 차단함
@@ -287,51 +377,7 @@ public class TableViewManager {
 			rows.forEach(row -> { row.setValue(colName, ""); });
 		}
 	}
-
 	
-	public <T extends Enum<T>> void addColumnComboBox(String colName, String header, boolean isEditable, Class<T> enumType) {
-		if(addColumnList(colName, header, DATATYPE.STRING, isEditable)) {
-			TableColumn<RowData, T> col = new TableColumn<RowData, T>(header);
-			col.setEditable(isEditable);
-			col.setCellValueFactory(row -> {
-				T val = Enum.valueOf(enumType, row.getValue().getValueString(colName));
-				return new SimpleObjectProperty<T>(val);
-			});
-			
-			if (isEditable) {
-				ObservableList<T> olist = FXCollections.observableArrayList(EnumSet.allOf(enumType));
-				col.setCellFactory(ComboBoxTableCell.forTableColumn(olist));
-				
-				EnumSet.allOf(enumType).forEach(e -> System.out.println(e.name()));
-			}
-			else {
-				//변경이 안되도록 마우스, 키 이벤트를 모두 차단함
-				col.setCellFactory(cellDataFeatures -> {
-					ComboBoxTableCell<RowData, T> cell = new ComboBoxTableCell<>();
-					cell.addEventFilter(KeyEvent.ANY, new EventHandler<KeyEvent> () {
-						@Override
-						public void handle(KeyEvent event) {
-							event.consume();
-						}
-					});
-					cell.addEventFilter(MouseEvent.ANY, new EventHandler<MouseEvent> () {
-						@Override
-						public void handle(MouseEvent event) {
-							event.consume();
-						}
-					});
-					cell.setEditable(false);
-					return cell;
-				});
-			}
-
-			_tableView.getColumns().add(col);
-
-			ObservableList<RowData> rows = _tableView.getItems();
-			rows.forEach(row -> { row.setValue(colName, ""); });
-		}
-	}
-
 	public void setTableCellValue(int rowIndex, int columnIndex, Object oValue) {
 		_tableView.getItems().get(rowIndex).setValue(columnIndex, oValue);
 	}
@@ -412,25 +458,54 @@ public class TableViewManager {
 						_tableView.getSelectionModel().getSelectedItems().forEach(row -> row.setBooleanReverse(columnIndex));
 						_tableView.getSelectionModel().getSelectedCells().forEach(cell -> cell.getTableColumn().setVisible(true));
 						
-
-//						String colName = getColumnName(columnIndex);
-//						boolean bChecked = _tableView.getItems().get(m.getFocusedIndex()).getValueBoolean(colName);
-//						_tableView.getItems().get(m.getFocusedIndex()).setValueBoolean(colName, ! bChecked);
-
-						System.out.println("columnIndex:" + columnIndex + ",  event column:" + m.getFocusedCell().getColumn() 
-								+ ", columnName:" + getColumnName(columnIndex) 
-								+ ", value:" + _tableView.getItems().get(m.getFocusedIndex()).getValueBoolean(columnIndex));
+						System.out.println(String.format("setCheckBoxColumnEvent(): index:%d, eventColumn:%s, colName:%s, value:%s"
+								, columnIndex, m.getFocusedCell().getColumn()
+								, getColumnName(columnIndex)
+								, _tableView.getItems().get(m.getFocusedIndex()).getValueBoolean(columnIndex)
+								));
 
 						// 선택셀이 바뀌지 않은 상태에서 스페이스 누를 때 내부적인 값이 변하나, 디스플레이가 바뀌지 않는 문제  visiable 변경 또는 refresh 호출이 필요함 
-//						m.getFocusedCell().getTableColumn().setVisible(false);
-//						m.getFocusedCell().getTableColumn().setVisible(true);
-						_tableView.refresh();
+						m.getFocusedCell().getTableColumn().setVisible(false);
+						m.getFocusedCell().getTableColumn().setVisible(true);
+//						_tableView.refresh();
 						event.consume();
 					}
 				}
 				
 			}
 		});
+
+		_tableView.addEventFilter(MouseEvent.MOUSE_CLICKED,  new EventHandler<MouseEvent>() {
+			@Override
+			public void handle(MouseEvent event) {
+				// TODO Auto-generated method stub
+				if(event.getButton() == MouseButton.PRIMARY && event.getClickCount()==1) {
+					TableViewFocusModel<RowData> m = _tableView.getFocusModel();
+					if (m != null && m.getFocusedCell().getColumn() == columnIndex) {
+						// 현재의 셀만 변경함
+						//_tableView.getItems().get(m.getFocusedIndex()).setBooleanReverse(columnIndex);
+						//선택된 셀을 변경함
+						_tableView.getSelectionModel().getSelectedItems().forEach(row -> row.setBooleanReverse(columnIndex));
+						_tableView.getSelectionModel().getSelectedCells().forEach(cell -> cell.getTableColumn().setVisible(true));
+						
+						System.out.println(String.format("setCheckBoxColumnEvent(): index:%d, eventColumn:%s, colName:%s, value:%s"
+								, columnIndex, m.getFocusedCell().getColumn()
+								, getColumnName(columnIndex)
+								, _tableView.getItems().get(m.getFocusedIndex()).getValueBoolean(columnIndex)
+								));
+
+						// 선택셀이 바뀌지 않은 상태에서 스페이스 누를 때 내부적인 값이 변하나, 디스플레이가 바뀌지 않는 문제  visiable 변경 또는 refresh 호출이 필요함 
+						m.getFocusedCell().getTableColumn().setVisible(false);
+						m.getFocusedCell().getTableColumn().setVisible(true);
+//						_tableView.refresh();
+						event.consume();
+					}
+				}
+				
+			}
+		});
+
+	
 	}
 	
 	public RowData newRowData() {

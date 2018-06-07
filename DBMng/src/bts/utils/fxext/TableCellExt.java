@@ -4,6 +4,7 @@ package bts.utils.fxext;
 import javafx.beans.binding.Bindings;
 import javafx.scene.Node;
 import javafx.scene.control.ContentDisplay;
+import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
@@ -59,9 +60,13 @@ public abstract class TableCellExt<S,T> extends TableCell<S, T> {
 	public void cancelEdit() {
 		//avoid JavaFX NullPointerException when calling commitEdit()
 //		System.out.println("TableCellEx.cancelEdit()... start");
-		
-		getTableView().edit(getIndex(),  getTableColumn());
-		commitEdit(getInputValue());
+		try {
+			getTableView().edit(getIndex(),  getTableColumn());
+			commitEdit(getInputValue());
+		}
+		catch (Exception ex) {
+			ex.printStackTrace();
+		}
 //		System.out.println("TableCellEx.cancelEdit()... end");
 	}
 	
@@ -112,6 +117,10 @@ public abstract class TableCellExt<S,T> extends TableCell<S, T> {
 					commitEdit(getInputValue());
 					
 					getTableView().getSelectionModel().selectBelowCell();
+					if(getTableView().getSelectionModel().getSelectionMode() == SelectionMode.MULTIPLE) {
+						getTableView().getSelectionModel().clearAndSelect(getTableView().getSelectionModel().getSelectedIndex(), getTableColumn());	
+					}
+
 					getTableView().requestFocus(); 
 				}
 				else if (event.getCode() == KeyCode.ESCAPE) {

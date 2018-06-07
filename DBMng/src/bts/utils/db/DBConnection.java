@@ -82,8 +82,8 @@ public class DBConnection {
 	
 	@Override
 	public String toString() {
-		return String.format("DBConnection: name=%s, dbms=%s, driver=%s, driverURL=%s, URL=%s, user=%s(%s)"
-				, _sConnName, _sDBMS, _sDriver, _sDriverURL, _sURL, _sUser, _sPassword);
+		return String.format("DBConnection: name=%s, dbms=%s, driver=%s, driverURL=%s, URL=%s, user=%s"
+				, _sConnName, _sDBMS, _sDriver, _sDriverURL, _sURL, _sUser);
 	}
 	
  
@@ -135,6 +135,7 @@ public class DBConnection {
 			}
 			_oConn = DriverManager.getConnection(sURL, sUser, sPassword);
 		} catch (Exception ex) {
+			System.err.println("DBConnection.connect():" + this.toString() + "/" + sPassword);
 			ex.printStackTrace();
 		}
 	}

@@ -25,10 +25,13 @@ public class RowData {
 		}
 	}
 	
-	private ArrayList<Column> _cols = new ArrayList<Column>();
+	private ArrayList<Column> _cols;
 //	private HashMap<String, Object> _cols = new HashMap<String, Object>();
-	
+	public RowData() {
+		_cols = new ArrayList<Column>();
+	}
 	public RowData(Object...objs) {
+		this();
 		for(int i=0; i < objs.length; i++) {
 			//_cols.put(String.valueOf(i),  objs[i]);
 			setValue(String.valueOf(i), objs[i]);
@@ -70,12 +73,24 @@ public class RowData {
 	}
 
 	public void setValue(String colName, Object oValue) {
-		for (Column c : _cols) {
-			if (c.name.equalsIgnoreCase(colName)) {
-				c.value = oValue;
+		
+		try {
+			if(colName == null || colName.isEmpty()) return; 
+			for (Column c : _cols) {
+				
+				if(c.name == null) {
+					_cols.remove(c);
+				}
+				else if (c.name.equalsIgnoreCase(colName)) {
+					c.value = oValue;
+				}
 			}
+			_cols.add(new Column(colName,  oValue));
 		}
-		_cols.add(new Column(colName,  oValue));
+		catch (Exception ex) {
+			System.out.println(String.format("_cols=%s, colName=%s", _cols, colName));
+			ex.printStackTrace();
+		}
 	}
 	
 	public void setValueInteger(int index, Integer value) {

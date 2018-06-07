@@ -6,6 +6,7 @@ package bts.utils.fxext;
 //import javafx.beans.binding.Bindings;
 import javafx.scene.Node;
 //import javafx.scene.control.ContentDisplay;
+import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
@@ -55,10 +56,14 @@ public class StringTableCell extends TableCellExt<RowData, String> {
 					commitEdit(getInputValue());
 					
 					if(event.getCode() == KeyCode.UP) {
-						getTableView().getSelectionModel().selectAboveCell();
+							getTableView().getSelectionModel().selectAboveCell();
 					} 
 					else {
 						getTableView().getSelectionModel().selectBelowCell();
+					}
+					
+					if(getTableView().getSelectionModel().getSelectionMode() == SelectionMode.MULTIPLE) {
+						getTableView().getSelectionModel().clearAndSelect(getTableView().getSelectionModel().getSelectedIndex(), getTableColumn());	
 					}
 					
 					getTableView().requestFocus(); //test

@@ -142,18 +142,26 @@ public class ObjectList {
 			                cols.add(colName);
 			                
 			                switch (ic) {
-			                case 0:
+			                case 0:  //번호
 			                	_viewManager.addColumnInteger(colName,colName, false);
 			                	break;
-			                case 1:
+			                case 1:  //선택 
 			                	_viewManager.addColumnCheckBox(colName,colName, true);
 			                	break;
-			                case 2:
+			                case 11:  // DBMS
+			                	_viewManager.addColumnComboBox(colName,colName, true, new String[]{"ORACLE","MS-SQL","N/A"});
+			                   	break;
+			                case 12:  //자동이관여부
 //			                	_viewManager.addColumnComboBox(colName,colName, true, enYN.class);
-			                	_viewManager.addColumnComboBox(colName,colName, true, new String[]{"Y","N"});
+			                	_viewManager.addColumnComboBox(colName,colName, true, new String[]{"Y","N","검토", "N/A"});
 			                   	break;
 			                default:
-			                	_viewManager.addColumnString(colName,colName, false);
+			                	if(ic >= 7 && ic <= 11) {
+			                		_viewManager.addColumnString(colName,colName, true);
+			                	}
+			                	else {
+			                		_viewManager.addColumnString(colName,colName, false);
+			                	}
 			                }
 			                ic++;
 	        			}
@@ -283,11 +291,22 @@ public class ObjectList {
     		if(event.getTarget().getClass().getSimpleName().equalsIgnoreCase("CheckBoxTableCell") ) {
     			//event.getTarget().getClass().getSimpleName().equalsIgnoreCase("TableColumnHeader")
     			//System.out.println(event.getTarget().getClass().getSimpleName());
+    			event.consume();
     			chagneCheckStatus();
         	} 
-//    		else if(event.getClickCount() == 2) {
-//        		showObjectText(false);
-//        	} 
+    		else if(event.getClickCount() == 2) {
+        		event.consume();
+        		try {
+        			showObjectText(false);
+        		}
+        		catch (Exception ex) {
+                    Alert alert = new Alert(AlertType.ERROR);
+                    alert.setTitle(new Object() {}.getClass().getEnclosingMethod().getName());
+                    alert.setHeaderText("");
+                    alert.setContentText(ex.getMessage());
+                    alert.showAndWait();
+        		}
+        	} 
     		else {
         		if (_contextMenu != null && _contextMenu.isShowing()) {
         			_contextMenu.hide();
@@ -295,6 +314,7 @@ public class ObjectList {
         	}
         	
     	} else if(event.getButton() == MouseButton.SECONDARY) {
+    		event.consume();
     		showContextMenu(event);
     	}
     }
@@ -346,17 +366,23 @@ public class ObjectList {
 //    }
     
     private void checkListAll() {
-    	ObservableList<RowData> olist = (ObservableList<RowData>)_tvObjectList.getItems();
+    	ObservableList<RowData> rows = _tvObjectList.getSelectionModel().getSelectedItems();
     	int index = _viewManager.getColumnIndex("선택");
-    	olist.forEach(row -> row.setValueBoolean(index, true));
+    	if(rows.size() <= 1) {
+    		rows = (ObservableList<RowData>)_tvObjectList.getItems();
+    	}
+		rows.forEach(row -> row.setValueBoolean(index, true));
     	_tvObjectList.refresh();
     	
     }
 
     private void unCheckListAll() {
-    	ObservableList<RowData> olist = (ObservableList<RowData>)_tvObjectList.getItems();
+    	ObservableList<RowData> rows = _tvObjectList.getSelectionModel().getSelectedItems();
     	int index = _viewManager.getColumnIndex("선택");
-    	olist.forEach(row -> row.setValueBoolean(index, false));
+    	if(rows.size() <= 1) {
+    		rows = (ObservableList<RowData>)_tvObjectList.getItems();
+    	}
+		rows.forEach(row -> row.setValueBoolean(index, false));
     	_tvObjectList.refresh();
     }
 	

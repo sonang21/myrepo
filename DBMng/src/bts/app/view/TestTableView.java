@@ -37,7 +37,10 @@ public class TestTableView {
 //		tvMgr.addRowStrings("abc", "val a", "test A");
 //		tvMgr.addRowStrings("bde", "val b", "test B");
 //		tvMgr.addRowStrings("cfg", "val c", "test C");
-		tvMgr.addRowObjects("obk", "val o", "test O", true,  "Y");
+		tvMgr.addRowObjects("aaa", "val a", "test A", true,  "Y");
+		tvMgr.addRowObjects("bbb", "val b", "test B", true,  "Y");
+		tvMgr.addRowObjects("ccc", "val c", "test C", true,  "N");
+		tvMgr.addRowObjects("ddd", "val d", "test D", true,  "");
 
 		tvMgr.setTableViewItems();
 		_tableView.setEditable(true);
