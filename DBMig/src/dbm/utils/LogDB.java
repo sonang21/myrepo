@@ -134,6 +134,7 @@ public class LogDB {
 		this.setStatus(LogStatus.valueOf(sStatus));
 	}
 	
+	@SuppressWarnings("unused")
 	private void setResult(String sResult) 
 	{ 
 		this.setResult(LogResult.valueOf(sResult));
@@ -474,6 +475,7 @@ public class LogDB {
 		return bResult;
 	}
 	
+	@SuppressWarnings("unused")
 	private boolean createLogTable() 
 	{
 //		boolean bResult = false;

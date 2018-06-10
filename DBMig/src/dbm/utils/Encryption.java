@@ -69,6 +69,7 @@ public class Encryption
 	}
 	
 	// sometimes error occured.
+	@SuppressWarnings("unused")
 	private static SecretKeySpec getSecretKeySpec2(String strSeed, String strAlgorithm) throws Exception
 	{
 		byte[] bytSeed = strSeed.getBytes();
@@ -116,6 +117,7 @@ public class Encryption
 		return bytesResult;
 	}
 
+	@SuppressWarnings("unused")
 	private static byte[] hexToBytes2(String strHex) {
 		int nLen = strHex.length();
 		byte[] bytesResult = new byte[nLen/2];
