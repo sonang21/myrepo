@@ -385,6 +385,25 @@ public class ObjectList {
 		rows.forEach(row -> row.setValueBoolean(index, false));
     	_tvObjectList.refresh();
     }
+    
+    private void verifyObjects() {
+    	ObservableList<RowData> rows = _tvObjectList.getSelectionModel().getSelectedItems();
+    	int index = _viewManager.getColumnIndex("선택");
+    	if(rows.size() <= 1) {
+    		rows = (ObservableList<RowData>)_tvObjectList.getItems();
+    	}
+		rows.forEach(row -> {
+			if(row.getValueBoolean(index)) {
+				System.out.println(String.format("Verify... %s, %s, %s"
+						, row.getValueString("SOURCE")
+						, row.getValueString("중분류")
+						, row.getValueString("프로그램ID")
+					));
+				row.setValueString("검사", "OK");
+			};
+		});
+    	_tvObjectList.refresh();
+    }
 	
 	@FXML
 	public void onButtonClose() {
@@ -401,10 +420,13 @@ public class ObjectList {
 	private void showContextMenu(MouseEvent event) {
 		if (_contextMenu == null) {
 			_contextMenu = new ContextMenu();
-			MenuItem menuItem1 = new MenuItem("View Source");
-			MenuItem menuItem2 = new MenuItem("Check All");
-			MenuItem menuItem3 = new MenuItem("UnCheck All");
-			menuItem1.setOnAction(
+			MenuItem[] menuItems = new MenuItem[4];
+			menuItems[0] = new MenuItem("View Source");
+			menuItems[1] = new MenuItem("Select All");
+			menuItems[2] = new MenuItem("Unselect All");
+			menuItems[3] = new MenuItem("Verity Selected");
+			
+			menuItems[0].setOnAction(
 				new EventHandler<ActionEvent>() {
 					@Override
 					public void handle(ActionEvent event ) {
@@ -413,7 +435,7 @@ public class ObjectList {
 				}
 			);
 			
-			menuItem2.setOnAction(
+			menuItems[1].setOnAction(
 				new EventHandler<ActionEvent>() {
 					@Override
 					public void handle(ActionEvent event) {
@@ -422,7 +444,7 @@ public class ObjectList {
 					}
 				}
 			);
-			menuItem3.setOnAction(
+			menuItems[2].setOnAction(
 	    			new EventHandler<ActionEvent>() {
 	    				@Override
 	    				public void handle(ActionEvent event) {
@@ -431,10 +453,22 @@ public class ObjectList {
 	    				}
 	    			}
 	    		);
-	    	_contextMenu.getItems().addAll(menuItem1, menuItem2, menuItem3);
+			
+			menuItems[3].setOnAction(
+					new EventHandler<ActionEvent>() {
+						@Override
+						public void handle(ActionEvent event ) {
+							verifyObjects();
+						}
+					}
+				);
+				
+			
+	    	_contextMenu.getItems().addAll(menuItems);
 	    	_contextMenu.setConsumeAutoHidingEvents(true);
 		} 
 		_contextMenu.show(_tvObjectList, event.getScreenX(), event.getScreenY());
 		
 	}
+	
 }
