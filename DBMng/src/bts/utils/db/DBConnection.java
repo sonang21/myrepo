@@ -31,7 +31,7 @@ import bts.utils.db.Encryption;
 @SuppressWarnings("unused")
 public class DBConnection {
 	
-	public static enum DBMS_TYPE { ORACLE, MSSQL };
+	public static enum DBMS_TYPE { ORACLE, MSSQL, DB2, MYSQL, HIVE, OTHER };
 	private static Vector<String> _vsDriverList = new Vector<String>();
 	
 	private static String _sConfigFile = "./conf/DBConfig.xml";
@@ -44,6 +44,7 @@ public class DBConnection {
 	private String _sPassword = null;
 	
 	private Connection _oConn = null;
+	private DBMS_TYPE _dbType;
 
 	
 	public DBConnection(String sConnectionName) {
@@ -64,16 +65,17 @@ public class DBConnection {
 		_sURL = sURL;
 		_sUser = sUser;
 		_sPassword = sPassword;
+		_dbType = dbType;
 	}
-
-	public DBConnection(String sDriverClassName, String sDriverFileName, String sURL, String sUser, String sPassword)
-	{
-		_sDriver = sDriverClassName;
-		_sDriverURL = sDriverFileName;
-		_sURL = sURL;
-		_sUser = sUser;
-		_sPassword = sPassword;
-	}
+	
+//	public DBConnection(String sDriverClassName, String sDriverFileName, String sURL, String sUser, String sPassword)
+//	{
+//		_sDriver = sDriverClassName;
+//		_sDriverURL = sDriverFileName;
+//		_sURL = sURL;
+//		_sUser = sUser;
+//		_sPassword = sPassword;
+//	}
 	
 	
 	public String getConnectionName() { return _sConnName; }
@@ -165,6 +167,13 @@ public class DBConnection {
 	{
 		_sConnName = sConnName;
 		_sDBMS 	= getConfigOf(sConnName, "dbms");
+		try {
+			_dbType = DBMS_TYPE.valueOf(_sDBMS);
+		}
+		catch ( Exception ex) {
+			_dbType = DBMS_TYPE.OTHER;
+		}
+		
 		_sDriver = getConfigOf(sConnName, "driver");
 		_sDriverURL = getConfigOf(sConnName, "driver_file");
 		_sURL = getConfigOf(sConnName, "url");
@@ -236,6 +245,10 @@ public class DBConnection {
 
 	}
 	
+	public DBMS_TYPE getDBType() {
+		return _dbType;
+	}
+	
 	
 	
 	public static void main(String args[]) {
@@ -279,6 +292,7 @@ public class DBConnection {
 	}
 
 }
+
 
 class _Driver implements Driver
 {

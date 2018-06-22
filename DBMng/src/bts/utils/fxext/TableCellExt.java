@@ -30,7 +30,25 @@ public abstract class TableCellExt<S,T> extends TableCell<S, T> {
 	
 	/** @return converts the given value to a string, being the cell-renderer representation. **/
 	protected abstract String inputValueToText(T value);
-
+	
+//	public TableCellExt() {
+//		setOnDragDetected(new EventHandler<MouseEvent>() {  
+//		    @Override  
+//	        public void handle(MouseEvent event) {
+//		    	System.out.println("MOUSE DRAG..........");
+//	            startFullDrag();  
+//	            getTableColumn().getTableView().getSelectionModel().select(getIndex(), getTableColumn());  
+//	        }  
+//	    });
+//	    setOnMouseDragEntered(new EventHandler<MouseDragEvent>() {  
+//	        @Override  
+//	        public void handle(MouseDragEvent event) {  
+//	            getTableColumn().getTableView().getSelectionModel().select(getIndex(), getTableColumn());  
+//	        }  
+//        
+//	    });  
+//	}
+	
 	@Override
 	public void startEdit() {
 //		System.out.println("TableCellEx.startEdit()... start");

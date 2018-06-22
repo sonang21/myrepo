@@ -166,6 +166,7 @@ public class TableViewManager {
 		if(addColumnList(colName, header, DATATYPE.STRING, isEditable)) {
 			TableColumn<RowData, String> col = new TableColumn<RowData, String>(header);
 			col.setCellValueFactory(cellData -> cellData.getValue().getStringProperty(colName));
+			
 			if (isEditable) {
 				col.setCellFactory(cellDataFeatures -> new StringTableCell(colName));
 				col.setOnEditCommit((CellEditEvent<RowData, String> event) -> {
@@ -269,7 +270,7 @@ public class TableViewManager {
 		}
 	}
 
-	public void addColumnCheckBoxOrigin(String colName, String header, boolean isEditable) {
+	public void addColumnCheckBoxOriginBackup(String colName, String header, boolean isEditable) {
 		if(addColumnList(colName, header, DATATYPE.BOOLEAN, isEditable)) {
 			TableColumn<RowData, Boolean> col = new TableColumn<RowData, Boolean>(header);
 			col.setEditable(isEditable);
@@ -450,6 +451,7 @@ public class TableViewManager {
 			public void handle(KeyEvent event) {
 				// TODO Auto-generated method stub
 				if(event.getCode() == KeyCode.SPACE) {
+					// 그리드에서 체크박스 컬럼에서 스페이스키를 누를 경우 체크/언체크 이벤트 실행
 					TableViewFocusModel<RowData> m = _tableView.getFocusModel();
 					if (m != null && m.getFocusedCell().getColumn() == columnIndex) {
 						// 현재의 셀만 변경함

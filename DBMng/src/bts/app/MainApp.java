@@ -1,6 +1,12 @@
 package bts.app;
 	
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.util.Properties;
 
 import bts.app.view.ObjectList;
 import bts.app.view.SQLPlanView;
@@ -28,20 +34,24 @@ public class MainApp extends Application {
 	private SQLPlanView _sqlPlanView;
 	private TestTableView _testTableView;
 	
+	private String _propertyFile = "properties.ini";
+	private Properties _properties; 
+	
 	@Override
 	public void start(Stage primaryStage) {
 		try {
 			_stage = primaryStage;
 			_stage.setTitle("DB Object Transfer");
-			
+	
 			initRootLayout();
 			initObjectList();
-//			initSQLPlanView();
-//			initTestTableView();
+	//		initSQLPlanView();
+	//		initTestTableView();
 			
 		} catch(Exception e) {
 			e.printStackTrace();
 		}
+
 	}
 	
 	private void initTestTableView() {
@@ -141,6 +151,44 @@ public class MainApp extends Application {
         } catch (IOException e) {
             e.printStackTrace();
         }
+	}
+	
+	
+	public Properties getProperties() {
+		if (_properties == null) {
+			readProperties();
+		}
+		return _properties;
+	}
+	
+	public void readProperties() {
+		try {
+			_properties = new Properties();
+			InputStream input = MainApp.class.getResourceAsStream(_propertyFile);
+			InputStreamReader reader = new InputStreamReader(input, "UTF-8");
+			_properties.load(reader);
+			reader.close();
+		}
+		catch (Exception ex){
+//			ex.printStackTrace();
+		}
+	}
+	public void saveProperties(Properties prop) {
+		try {
+			_properties = prop;
+			//System.out.println("saveProperties(): " + MainApp.class.getResource(".").getPath());
+			FileOutputStream output = new FileOutputStream(MainApp.class.getResource(".").getPath() + _propertyFile);
+			OutputStreamWriter writer = new OutputStreamWriter(output, "UTF-8");
+			
+			if(_properties == null) _properties = new Properties();
+			
+			//_properties.put(propertyName, propertyValue);
+			_properties.store(writer, "MainApp Properties");
+			writer.close();
+		}
+		catch (Exception ex) {
+			ex.printStackTrace();
+		}
 	}
 	
 	public void showViewSourceDialog(String strText) {

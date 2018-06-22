@@ -1,7 +1,10 @@
 package bts.app.view;
 
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.scene.control.TextArea;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.stage.Stage;
 
 //import java.time.Duration;
@@ -35,6 +38,7 @@ public class ViewSource {
 	 */
 	@FXML
 	private void initialize() {
+		
 	}
 	
 	/**
@@ -42,7 +46,17 @@ public class ViewSource {
 	 * @param dialogStage
 	 */
 	public void setDialogStage(Stage dialogStage) {
-		this._stage = dialogStage;
+		_stage = dialogStage;
+		
+		// ESC키에서 창을 닫도록 이벤트 추가
+		_stage.getScene().addEventFilter(KeyEvent.KEY_PRESSED, new EventHandler<KeyEvent>() {
+			@Override
+			public void handle(KeyEvent event) {
+				if(event.getCode() == KeyCode.ESCAPE) {
+					_stage.close();
+				}
+			}
+		});
 	}
 	
 	@FXML

@@ -17,41 +17,42 @@ import java.util.Properties;
 //import dbm.db.dbpool.DBConnectionManager;
 
 @SuppressWarnings({"unused"})
-public class MSTest {
+public class MSTest extends Thread {
 	private String _sSourceDB;
 	private String _sTargetDB;
 	private String _sSourceTable;
 	private String _sTargetTable;
-	private static int _nTotalCount=0;
+	private static long _nTotalCount=0;
 	private static int _nThreadCount=0;
-	private static int _nBatchSize = 5000; //5000;
+	private static int _nBatchSize = 10000; //5000;
 	private static int _nFetchSize = 1000; //5000;
-	private static long _nRows = 500000; //500000;
-	private static long _nOffSetUnit = _nRows;
+//	private static long _nRows = 500000; //500000;
+//	private static long _nOffSetUnit = _nRows;
 
 	private int _nThreadNumber;
-	
+
 //	@SuppressWarnings("unused")
 	public static void main(String[] args) throws Exception {
-		test01(args);
-		/*****************
+//		test01(args);
+		/*****************/
 		long lStartTime = System.currentTimeMillis();
 		long lSpotTime = lStartTime ;
 		double dElapsedSec = 0.0;
+		_nBatchSize = 5000;
 		
-		int nTotalCnt = 1;
+		int nTotalCnt = 20;
 		if (args.length > 0) {
 			System.out.println(args[0]);
 			nTotalCnt = Integer.valueOf(args[0]);
 		}
-		SampleAlone[] sample = new SampleAlone[nTotalCnt];
+		MSTest[] sample = new MSTest[nTotalCnt];
 		
 		for(int i=0; i < sample.length; i++) {
-			sample[i] = new SampleAlone("MPDB_TEST", "ELOC2001.dbo.pricelist"
-					                 , "ANALSTORE", "ANALSTORE.dbo.tb_test_pl");
+			sample[i] = new MSTest(i);
 			sample[i].start();
 			Thread.sleep(3000);
-			while (_nThreadCount >= 7 && i < sample.length) { 
+//			while (_nThreadCount >= 7 && i < sample.length) {
+			if(i==0) {
 				Thread.sleep(3000);
 			}
 		}
@@ -59,20 +60,26 @@ public class MSTest {
 			sample[i].join();
 		}
 		dElapsedSec =  (System.currentTimeMillis() - lStartTime) /1000.0;
-		long nRows = _nRows * _nTotalCount;
+		long nRows = _nTotalCount;
 		System.out.println( String.format("### END : %d Rows, Sec: %.0f,  %.1f rows/sec", nRows, dElapsedSec, nRows / dElapsedSec));
 		
 		/******************/
 		
 	}
 	
-	public static void test01(String[] args) {
+	public MSTest(int threadNumber) {
+		_nThreadNumber = threadNumber;
+	}
+	public void run() {
+		test01();
+	}
+	
+	private void test01() {
 		System.out.println("ok 0");
 		
-		int _nBatchSize = 100;
 		long lStartTime = System.currentTimeMillis();
 		double dElapsedSec = 0.0;
-		long _nRows = 0;
+		long nRows = 0;
 		
 		//DBConnectionManager oConMgr = new DBConnectionManager("MPDB_TEST");
 		System.out.println("ok 1");
@@ -102,6 +109,11 @@ public class MSTest {
 			Connection oConnS = DriverManager.getConnection(sConnS);
 			Connection oConnT = DriverManager.getConnection(sConnT);
 			
+			Statement oCommitStmt = oConnT.createStatement(); // for manual commit with additional option
+			
+			if(_nThreadNumber == 0)
+				oCommitStmt.execute("truncate table analstore.dbo.tb_test2");
+			
 			oConnT.setAutoCommit(false);
 
 			oStmtS = oConnS.createStatement();
@@ -126,7 +138,7 @@ public class MSTest {
 			System.out.println("sql:" + strSqlT1);
 			
 			while(oRs.next()) {
-				_nRows ++;
+				nRows ++;
 				for(int i=1; i <= oRsMeta.getColumnCount(); i++) {
 					//System.out.print(String.valueOf(i) + " ");
 					switch (oRsMeta.getColumnType(i)) {
@@ -169,24 +181,33 @@ public class MSTest {
 
 				}
 				oStmtT.addBatch();
-				if(_nRows % _nBatchSize == 0 ) {
+				if(nRows % _nBatchSize == 0 ) {
 					oStmtT.executeBatch();
 					oStmtT.clearBatch();
-					oConnT.commit();
+
+					oCommitStmt.execute("commit with (delayed_durability=on)");
+//					oConnT.commit();
+					
 					dElapsedSec =  (System.currentTimeMillis() - lStartTime) /1000.0;
-					System.out.println( String.format("%10d Rows ...%7.0f rows/sec", _nRows, _nRows / dElapsedSec));
+					System.out.println( String.format("... Thread(%2d): %10d Rows ...%7.0f rows/sec", _nThreadNumber, nRows, nRows / dElapsedSec));
 		
 				}
 			}
 			
-			if((_nRows % _nBatchSize) != 0) {
+			if((nRows % _nBatchSize) != 0) {
 				oStmtT.executeBatch();
 				oStmtT.clearBatch();
-				oConnT.commit();
+				
+				oCommitStmt.execute("commit with (delayed_durability=on)");
+//				oConnT.commit();
+				
 			}
+			
+			addCount(nRows);
 
 			dElapsedSec =  (System.currentTimeMillis() - lStartTime) /1000.0;
-			System.out.println( String.format("COMPLETE : total %d Rows, Sec: %.0f,  %.1f rows/sec", _nRows, dElapsedSec, _nRows / dElapsedSec));
+			System.out.println( String.format("COMPLETE(%2d) : total %d Rows, Sec: %.0f,  %.1f rows/sec"
+					, _nThreadNumber, nRows, dElapsedSec, nRows / dElapsedSec));
 
 			oStmtS.close();
 			oStmtT.close();	
@@ -198,5 +219,9 @@ public class MSTest {
 		//oConMgr.closeAll();
 	}
 
+	public synchronized void addCount(long nRows)
+	{
+		_nTotalCount = _nTotalCount + nRows;
+	}
 
 }

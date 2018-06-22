@@ -3,6 +3,7 @@ package bts.app;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.text.SimpleDateFormat;
 
 import bts.utils.db.DBConnection;
 import bts.utils.db.DBConnection.DBMS_TYPE;
@@ -47,10 +48,12 @@ public class DBObjectWork {
 			PreparedStatement oStmt = _oConn.prepareStatement(sSQL);
 			oStmt.setString(1, sOwner);
 			oStmt.setString(2, sObjectName);
-			oStmt.setString(3, sObjectType);
+			oStmt.setString(3, sObjectType.toUpperCase());
 			ResultSet oRs = oStmt.executeQuery();
 			if (oRs.next()) {
 				sResult = oRs.getString(6);
+//				SimpleDateFormat fmt = new SimpleDateFormat("yyyyMMdd_HHmmss");
+//				System.out.println(fmt.format(oRs.getDate(4))+ " , "+ fmt.format(oRs.getDate(5)));
 			} else {
 				sResult = "";
 			}
@@ -63,7 +66,7 @@ public class DBObjectWork {
 		return sResult;
 	}
 
-	public String getMSSQLText(String sDBName, String sOwner, String sObjectName, String sObjectType) {
+	public String getMSSQLText(String sDBName, String sOwner, String sObjectName) {
 		
 		String sResult;
 		String sSQL = "SELECT DB_NAME()  DB_NAME \r\n" + 
@@ -75,10 +78,10 @@ public class DBObjectWork {
 			      "       END  AS TYPE2 \r\n" + 
 			      "     , C.NAME     SCHEMA_NAME \r\n" + 
 			      "     , A.NAME     SOURCE_NAME \r\n" + 
-			      "     , B.DEFINITION \r\n" + 
+			      "     , B.DEFINITION \r\n" +                     //5 
 			      "     , A.TYPE     SOURCE_TYPE \r\n" + 
 			      "     , A.TYPE_DESC \r\n" + 
-			      "     , A.CREATE_DATE, A.MODIFY_DATE \r\n" +
+			      "     , A.CREATE_DATE, A.MODIFY_DATE \r\n" +     //8,9
 			      "FROM SYS.OBJECTS A \r\n" + 
 			      "     INNER JOIN SYS.SQL_MODULES B ON (B.OBJECT_ID = A.OBJECT_ID) \r\n" + 
 			      "     INNER JOIN SYS.SCHEMAS     C ON (C.SCHEMA_ID = A.SCHEMA_ID) \r\n" +
@@ -98,7 +101,10 @@ public class DBObjectWork {
 			ResultSet oRs = oStmt.executeQuery();
 			if (oRs.next()) {
 				sResult = oRs.getString(5);
-//				System.out.println(sResult);
+				//System.out.println(oRs.getString(8)+ " , "+ oRs.getString(9));
+				SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+				System.out.println(fmt.format(oRs.getTimestamp(8))+ " , "+ fmt.format(oRs.getTimestamp(9)));
+
 			} else {
 				sResult = "";
 			}
@@ -114,6 +120,64 @@ public class DBObjectWork {
 
 	public void closeAll() {
 		_dbconnection.dbClose();
+	}
+	
+	public boolean objectExistsMSSQL(String sDBName, String sOwner, String sObjectName) {
+		boolean bResult = false;
+		String sSQL = "SELECT 1 " +
+			      "FROM SYS.OBJECTS A \r\n" + 
+			      "     INNER JOIN SYS.SCHEMAS     C ON (C.SCHEMA_ID = A.SCHEMA_ID) \r\n" +
+			      "WHERE C.NAME = ? \r\n" +   // schema
+			      "  AND A.NAME = ? \r\n";    // object_name
+
+		try {
+			_oConn.setCatalog(sDBName);
+			PreparedStatement oStmt = _oConn.prepareStatement(sSQL);
+			oStmt.setString(1, sOwner);
+			oStmt.setString(2, sObjectName);
+//			oStmt.setString(3, sObjectType);
+			ResultSet oRs = oStmt.executeQuery();
+			if (oRs.next()) {
+				bResult = true;
+			} else {
+				bResult = false;
+			}
+			oRs.close();
+		} catch (Exception e) {
+			// TODO: handle exception
+			bResult = false;
+			e.printStackTrace();
+		}
+		return bResult;
+	}
+
+	public boolean objectExistsORACLE(String sOwner, String sObjectName, String sObjectType) {
+		boolean bResult = false;
+		String sSQL = 
+				"SELECT 1 " +
+				"  FROM DBA_OBJECTS A \r\n" + 
+				" WHERE 1 = 1 \r\n" +
+				"   AND A.OWNER = ? \r\n" +
+				"   AND A.OBJECT_NAME = ? \r\n" +
+				"   AND A.OBJECT_TYPE = ? \r\n";
+		try {
+			PreparedStatement oStmt = _oConn.prepareStatement(sSQL);
+			oStmt.setString(1, sOwner.toUpperCase());
+			oStmt.setString(2, sObjectName.toUpperCase());
+			oStmt.setString(3, sObjectType.toUpperCase());
+			ResultSet oRs = oStmt.executeQuery();
+			if (oRs.next()) {
+				bResult = true;
+			} else {
+				bResult = false;
+			}
+			oRs.close();
+		} catch (Exception e) {
+			// TODO: handle exception
+			bResult = false;
+			e.printStackTrace();
+		}
+		return bResult;
 	}
 
 }

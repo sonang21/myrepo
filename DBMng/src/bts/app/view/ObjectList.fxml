@@ -18,7 +18,7 @@
             <content>
                   <BorderPane>
                      <center>
-                        <TableView fx:id="_tvObjectList" onMouseClicked="#onClickObjectList" prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+                        <TableView fx:id="_tvObjectList" onKeyPressed="#onKeyPressed" onMouseClicked="#onClickObjectList" prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER">
                           <columns>
                             <TableColumn prefWidth="75.0" text="중분류" />
                             <TableColumn prefWidth="75.0" text="소분류" />

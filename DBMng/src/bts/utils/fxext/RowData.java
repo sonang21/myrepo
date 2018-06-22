@@ -167,10 +167,20 @@ public class RowData {
 	
 	
 	public String getValueString (int index) {
-		return getValue(index).toString();
+		if(getValue(index) == null) {
+			return "";
+		} 
+		else {
+			return getValue(index).toString();
+		}
 	}
 	public String getValueString(String colName) {
-		return getValue(colName).toString();
+		if (getValue(colName) == null) {
+			return "";
+		} 
+		else {
+			return getValue(colName).toString();
+		}
 	}
 
 	public Boolean getValueBoolean (int index) {
