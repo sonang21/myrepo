@@ -37,9 +37,11 @@ import org.apache.poi.ss.usermodel.*;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 //import java.io.FileInputStream;
 //import java.io.IOException;
 //import java.util.Iterator;
@@ -57,15 +59,32 @@ public class ObjectList {
 	
 	private TableViewManager _viewManager;
 	private File _file;
-	private String _sLastPath = "C:\\Temp";
-	private String _sLastFile = "";
-	
+	private String _sExcelPath = "C:\\Temp";
+	private String _sExcelFile = "";
+	private String _sWorkingDir = "C:\\Temp\\ddls\\";
+	private String _sBackupDir;
+	private String _sTempDir;
+		
 	/**
      * 컨트롤러 클래스를 초기화한다.
      * fxml 파일이 로드되고 나서 자동으로 호출된다.
      */
 	@FXML
 	private void initialize() {
+		_sTempDir = _sWorkingDir + "tmp\\";
+		_sBackupDir = _sWorkingDir + "bakup\\";
+		
+		File file = new File(_sTempDir);  // ddl 저장 위치 와 하위에 임시 파일 생성 디렉토리를 구성한다.
+		if(!file.exists()) {
+			System.out.println(file.mkdirs());
+			System.out.println("Directory Created : " + _sTempDir);
+		}
+		
+		file = new File(_sBackupDir);  // ddl 저장 위치 와 하위에 임시 파일 생성 디렉토리를 구성한다.
+		if(!file.exists()) {
+			System.out.println(file.mkdirs());
+			System.out.println("Directory Created : " + _sBackupDir);
+		}
 	}
 	
 //	@SuppressWarnings("unused")
@@ -104,17 +123,17 @@ public class ObjectList {
 		Properties prop = _mainApp.getProperties();
 		try {
 			if(prop.containsKey("last_path")) {
-				_sLastPath = prop.getProperty("last_path");
+				_sExcelPath = prop.getProperty("last_path");
 			}
 			
-			_sLastFile = prop.getProperty("last_file");
+			_sExcelFile = prop.getProperty("last_file");
 		}
 		catch (Exception ex) {
 			//ex.printStackTrace();
 			System.err.println(ex.getMessage());
 		}
 
-        System.out.println("onButtonOpen() : last path= " + _sLastPath + ", file=" + _sLastFile);
+        System.out.println("onButtonOpen() : last path= " + _sExcelPath + ", file=" + _sExcelFile);
 
 		FileChooser fileChooser = new FileChooser();
 
@@ -123,22 +142,25 @@ public class ObjectList {
                 "Excel files (*.xls;*.xlsx)", "*.xls;*.xlsx");
         fileChooser.getExtensionFilters().add(extFilter);
         //fileChooser.setInitialDirectory(new File("C:\\Temp\\"));
-        fileChooser.setInitialDirectory(new File(_sLastPath));
-        fileChooser.setInitialFileName(_sLastFile);
+        fileChooser.setInitialDirectory(new File(_sExcelPath));
+        fileChooser.setInitialFileName(_sExcelFile);
         
         // File Dialog를 보여준다.
         _file = fileChooser.showOpenDialog(_mainApp.getPrimaryStage());
 
         if (_file != null) {
         	System.out.println("File choosed: " + _file.getName());
-        	_sLastPath = _file.getParentFile().getAbsolutePath();
-        	_sLastFile = _file.getName();
+        	_sExcelPath = _file.getParentFile().getAbsolutePath();
+        	_sExcelFile = _file.getName();
 //        	_mainApp.getProperties().put("default_dir", _defaultPath);
-        	prop.put("last_path", _sLastPath);
-        	prop.put("last_file", _sLastFile);
+        	prop.put("last_path", _sExcelPath);
+        	prop.put("last_file", _sExcelFile);
         	_mainApp.saveProperties(prop);
         	
-        	
+        	int ir=0; 
+            String colName;
+            int ic=0;
+            
         	try {
         		//Workbook workbook = WorkbookFactory.create(_file);
         		Workbook workbook = WorkbookFactory.create(_file, null, true);  // _file, passwd, readonly
@@ -156,9 +178,6 @@ public class ObjectList {
                 
         		_viewManager = new TableViewManager(_tvObjectList, true);
                 
-                int ir=0; 
-                String colName;
-                int ic=0;
                 ArrayList<String> cols = new ArrayList<>();
         		for (Row row: sheet) {
         			//첫줄에 대해서 컬럼 헤더 설정
@@ -232,7 +251,7 @@ public class ObjectList {
 //        		String sStack = ex.getStackTrace()[1].getMethodName();
                 Alert alert = new Alert(AlertType.ERROR);
                 alert.setTitle(new Object() {}.getClass().getEnclosingMethod().getName());
-                alert.setHeaderText("");
+                alert.setHeaderText(String.format("Cell[%d, %d] 에서 오류", ir+1, ic+1));
                 alert.setContentText(ex.getMessage());
                 alert.showAndWait();
         		ex.printStackTrace();    		
@@ -407,7 +426,7 @@ public class ObjectList {
     }
 
     private void showObjectText(boolean bBeautifulShow) {
-    	String strText="";
+    	String strText[] = new String[2];
     	RowData rowData = _tvObjectList.getSelectionModel().getSelectedItem();
 	
 		String sDBType = rowData.getValueString("DBMS");
@@ -421,19 +440,19 @@ public class ObjectList {
 		System.out.println(dbWork.toString());
 
 		if (sDBType.equalsIgnoreCase("ORACLE")) {
-			strText = dbWork.getOracleText(sSchema, sObjectName, sObjectType);
+			strText = dbWork.getOracleText(sSchema, sObjectName, sObjectType, false);
 		}
 		else if(sDBType.equalsIgnoreCase("MS-SQL")) {
-			strText = dbWork.getMSSQLText(sSchema, "dbo", sObjectName);
+			strText = dbWork.getMSSQLText(sSchema, "dbo", sObjectName, sObjectType, false);
 		}
 		
 		dbWork.closeAll();
-		if(strText != null && strText != "") {
+		if(strText[0].equals("1")) {
 			if(bBeautifulShow) {
-				_mainApp.showViewSourceExDialog(strText);
+				_mainApp.showViewSourceExDialog(strText[1]);
 			} 
 			else {
-				_mainApp.showViewSourceDialog(strText);
+				_mainApp.showViewSourceDialog(strText[1]);
 			}
 		}
 		else {
@@ -448,10 +467,217 @@ public class ObjectList {
             alert.showAndWait();
 		}
     }
+
+    private void getObjectSourceAll() {
+    	
+    	ObservableList<RowData> rows = _tvObjectList.getSelectionModel().getSelectedItems();
+    	int index = _viewManager.getColumnIndex("선택");
+    	if(rows.size() <= 1) {
+    		rows = (ObservableList<RowData>)_tvObjectList.getItems();
+    	}
+    	
+    	HashMap<String, DBObjectWork> dbWorks = new HashMap<>();
+    	
+		rows.forEach(row -> {
+	    	String sResult="";
+			if(row.getValueBoolean(index)) {
+				String sObjType  = row.getValueString("중분류");
+				String sObjName  = row.getValueString("오브젝트명");
+				String sDBMS     = row.getValueString("DBMS");
+				String[] sConnNames = new String[2];
+				String[] sSchemas   = new String[2];
+				String[][] sText      = {{"",""},{"",""}};
+//				String[] sSuffix    = {"src", "tgt"};
+				sConnNames[0] = row.getValueString("SOURCE");
+				sConnNames[1] = row.getValueString("TARGET");
+				sSchemas[0]   = row.getValueString("SCHEMA");
+				sSchemas[1]   = row.getValueString("TGT_OWN");
+				
+				System.out.println(String.format("getObjectSourceAll(): DB:%s(%s=>%s), OWN:%s=>%s, Type:%s, Name:%s"
+						, sDBMS
+						, sConnNames[0], sConnNames[1]
+						, sSchemas[0], sSchemas[1]								
+						, sObjType
+						, sObjName
+					));
+				
+				for(int i=0; i < sConnNames.length; i++) {
+					if(! dbWorks.containsKey(sConnNames[i])) {
+						DBObjectWork dbWork = new DBObjectWork(sConnNames[i]);
+						dbWorks.put(sConnNames[i], dbWork);
+					}	
+				}
+				
+				if(sDBMS.equalsIgnoreCase("ORACLE")) {
+					for(int i=0; i < sConnNames.length; i++) {
+						sText[i] = dbWorks.get(sConnNames[i]).getOracleText(sSchemas[i], sObjName, sObjType, true);
+						if(!sText[i][0].equals("1")) sResult = sResult + sConnNames[i] + "(X)";
+					}
+				}
+				else if(sDBMS.equalsIgnoreCase("MS-SQL")) {
+					for(int i=0; i < sConnNames.length; i++) {
+						sText[i] = dbWorks.get(sConnNames[i]).getMSSQLText(sSchemas[i], "dbo", sObjName, sObjType, true);
+						if(! sText[i][0].equals("1")) sResult = sResult + sConnNames[i] + "(X)";
+					}
+				}
+				
+				for(int i=0; i < sConnNames.length; i++) {
+					try {
+						if(sText[i][0].equals("1")) {
+							String sFileS = getFileName(sObjType, sObjName, sConnNames[i], (i==1));
+							FileOutputStream outputS = new FileOutputStream(sFileS);
+							BufferedWriter writerS  = new BufferedWriter(new OutputStreamWriter(outputS, "UTF-8"));
+							writerS.write(sText[i][1]);
+							writerS.close();
+						}
+					}
+					catch (Exception ex) {
+						ex.printStackTrace();
+						sResult = ex.getMessage();
+					}
+				}
+				row.setValueString("결과", (sResult==""?"완료":sResult));
+			};
+		});
+		
+		dbWorks.forEach((k,v) -> v.closeAll());
+		
+    	_tvObjectList.refresh();
+
+    	Alert alert = new Alert(AlertType.INFORMATION);
+        alert.setTitle(new Object() {}.getClass().getEnclosingMethod().getName());
+        alert.setHeaderText("완료");
+        alert.setContentText("요청작업을 완료하였습니다.");
+        alert.showAndWait();
+
+    }
+
+    private void getObjectSource() {
+    	RowData rowData = _tvObjectList.getSelectionModel().getSelectedItem();
+	
+		String sDBType = rowData.getValueString("DBMS");
+		String sObjectType = rowData.getValueString("중분류").toUpperCase();
+		String sObjectName = rowData.getValueString("오브젝트명").toUpperCase();
+		
+		String sDBConnS = rowData.getValueString("SOURCE");
+		String sSchemaS = rowData.getValueString("SCHEMA");
+		
+		String sObjectInfo = String.format("[%s(%s),%s.%s.%s]", sDBType, sDBConnS, sSchemaS, sObjectType, sObjectName); 
+		System.out.println(sObjectInfo);
+		DBObjectWork dbWorkS = new DBObjectWork(sDBConnS);
+		System.out.println(dbWorkS.toString());
+		String strTextS[] = {"",""};
+
+		if (sDBType.equalsIgnoreCase("ORACLE")) {
+			strTextS = dbWorkS.getOracleText(sSchemaS, sObjectName, sObjectType, true);
+		}
+		else if(sDBType.equalsIgnoreCase("MS-SQL")) {
+			strTextS = dbWorkS.getMSSQLText(sSchemaS, "dbo", sObjectName, sObjectType, true);
+		}
+		
+		dbWorkS.closeAll();
+		
+		if (! strTextS[0].equals("1")) {
+			rowData.setValueString("결과", "없음(오류)");
+            _tvObjectList.refresh();
+            return;
+		}
+
+		try {
+			String sFileS = getFileName(sObjectType, sObjectName, sDBConnS, false);
+			FileOutputStream outputS = new FileOutputStream(sFileS);
+			BufferedWriter writerS  = new BufferedWriter(new OutputStreamWriter(outputS, "UTF-8"));
+			writerS.write(strTextS[1]);
+			writerS.close();
+			rowData.setValueString("결과", "완료");
+            _tvObjectList.refresh();
+		}
+		catch (Exception ex) {
+			ex.printStackTrace();
+			rowData.setValueString("결과", ex.getMessage());
+            _tvObjectList.refresh();
+		}
+    }
+
+    private String getFileName(String sObjType, String sObjName, String sConnName, boolean isBackup ) {
+    	String filePath = isBackup ? _sBackupDir : _sWorkingDir;
+    	return String.format("%s%s_%s_%s.sql", filePath, sObjType, sObjName, sConnName);
+    }
+
+    private String getTempFileName(String sObjType, String sObjName, String sConnName ) {
+//    	String filePath = isTemp ? _sTempDir : _sWorkingDir;
+    	return String.format("%s%s_%s_%s.sql", _sTempDir, sObjType, sObjName, sConnName);
+    }
+
+    
+    private void genScriptForApply() {
+    	ObservableList<RowData> rows = _tvObjectList.getSelectionModel().getSelectedItems();
+    	int index = _viewManager.getColumnIndex("선택");
+    	if(rows.size() <= 1) {
+    		rows = (ObservableList<RowData>)_tvObjectList.getItems();
+    	}
+    	
+    	rows.forEach(row -> {
+	    	String sResult="완료";
+			if(row.getValueBoolean(index)) {
+				String sObjType   = row.getValueString("중분류");
+				String sObjName   = row.getValueString("오브젝트명");
+				String sDBMS      = row.getValueString("DBMS");
+				String sConnNameS = row.getValueString("SOURCE");
+				String sConnNameT = row.getValueString("TARGET");
+//				String sSchemaS   = row.getValueString("SCHEMA");
+				String sSchemaT   = row.getValueString("TGT_OWN");
+//				String sText      = "";
+				
+				System.out.println(String.format("genScriptForApply(): DB:%s(%s), OWN:%s, Type:%s, Name:%s"
+						, sDBMS
+						, sConnNameT
+						, sSchemaT								
+						, sObjType
+						, sObjName
+					));
+				
+				try {
+					String sFileR = getFileName(sObjType, sObjName, sConnNameS, false); //ObjType_ObjName_sConnNameS
+					String sFileW = getFileName("_" + sConnNameT, sObjType, "all", false);
+					
+					FileInputStream input = new FileInputStream(sFileR);
+					BufferedReader reader = new BufferedReader(new InputStreamReader(input, "UTF-8"));
+					
+					FileOutputStream output = new FileOutputStream(sFileW, true); //append
+//					BufferedWriter writer  = new BufferedWriter(new OutputStreamWriter(output, "UTF-8"));
+//					writer.write(sText);
+
+					PrintWriter writer = new PrintWriter(new OutputStreamWriter(output, "UTF-8"));
+					
+					while(true) {
+			            String line = reader.readLine();
+			            if (line==null) break;
+			            writer.println(line);
+			        }
+					reader.close();
+					writer.close();
+					sResult = "성공";
+
+				}
+				catch (Exception ex) {
+					ex.printStackTrace();
+					sResult = ex.getMessage();
+				}
+				row.setValueString("결과", sResult);
+			};
+		});
+    	
+    	Alert alert = new Alert(AlertType.INFORMATION);
+        alert.setTitle(new Object() {}.getClass().getEnclosingMethod().getName());
+        alert.setHeaderText("완료");
+        alert.setContentText("요청작업을 완료하였습니다.");
+        alert.showAndWait();
+    }
+    
     
     
     private void showDiffWindow(boolean bForceView) {
-    	String sTempDir = "C:\\Temp\\ddls\\";
     	RowData rowData = _tvObjectList.getSelectionModel().getSelectedItem();
 	
 		String sDBType = rowData.getValueString("DBMS");
@@ -469,38 +695,38 @@ public class ObjectList {
 		DBObjectWork dbWorkS = new DBObjectWork(sDBConnS);
 		DBObjectWork dbWorkT = new DBObjectWork(sDBConnT);
 		System.out.println(dbWorkS.toString() + dbWorkT.toString());
-		String strTextS = "";
-		String strTextT = "";
+		String strTextS[] = {"",""};
+		String strTextT[] = {"",""};
 		
 		if (sDBType.equalsIgnoreCase("ORACLE")) {
-			strTextS = dbWorkS.getOracleText(sSchemaS, sObjectName, sObjectType);
-			strTextT = dbWorkT.getOracleText(sSchemaT, sObjectName, sObjectType);
+			strTextS = dbWorkS.getOracleText(sSchemaS, sObjectName, sObjectType, false);
+			strTextT = dbWorkT.getOracleText(sSchemaT, sObjectName, sObjectType, false);
 			
 		}
 		else if(sDBType.equalsIgnoreCase("MS-SQL")) {
-			strTextS = dbWorkS.getMSSQLText(sSchemaS, "dbo", sObjectName);
-			strTextT = dbWorkT.getMSSQLText(sSchemaT, "dbo", sObjectName);
+			strTextS = dbWorkS.getMSSQLText(sSchemaS, "dbo", sObjectName, sObjectType, false);
+			strTextT = dbWorkT.getMSSQLText(sSchemaT, "dbo", sObjectName, sObjectType, false);
 		}
 		
 		dbWorkS.closeAll();
 		dbWorkT.closeAll();
 		
-		if (strTextS=="" && strTextT == "") {
-			rowData.setValueString("비교", "없음");
+		if (strTextS[0]=="" && strTextT[0] == "") {
+			rowData.setValueString("결과", "없음(오류)");
             _tvObjectList.refresh();
             return;
 		}
 
 		try {
-			String sFileS = sTempDir + sObjectType + "_" + sObjectName + "_src.sql";
-			String sFileT = sTempDir + sObjectType + "_" + sObjectName + "_tgt.sql";
+			String sFileS = getTempFileName(sObjectType, sObjectName, sDBConnS + "_src");
+			String sFileT = getTempFileName(sObjectType, sObjectName, sDBConnT + "_tgt");
 			FileOutputStream outputS = new FileOutputStream(sFileS);
 			BufferedWriter writerS  = new BufferedWriter(new OutputStreamWriter(outputS, "UTF-8"));
-			writerS.write(strTextS);
+			writerS.write(strTextS[1]);
 			writerS.close();
 			FileOutputStream outputT = new FileOutputStream(sFileT);
 			BufferedWriter writerT  = new BufferedWriter(new OutputStreamWriter(outputT, "UTF-8"));
-			writerT.write(strTextT);
+			writerT.write(strTextT[1]);
 			writerT.close();
 			
 			
@@ -518,9 +744,9 @@ public class ObjectList {
             System.out.println("FC Exited with error code "+exitVal);
             if (exitVal != 0 || bForceView) {
             	if(exitVal == 0) 
-            		rowData.setValueString("비교", "일치");
+            		rowData.setValueString("결과", "일치");
             	else 
-            		rowData.setValueString("비교", "불일치");
+            		rowData.setValueString("결과", "불일치");
             	
                 _tvObjectList.refresh();
             	String cmd = String.format("C:\\Program Files\\Devart\\Code Compare\\codecompare.exe %s %s", sFileS, sFileT); //W:wait
@@ -530,7 +756,7 @@ public class ObjectList {
             	System.out.println("CodeCompare Exited with error code "+exitVal);
             }
             else {
-            	rowData.setValueString("비교", "일치");
+            	rowData.setValueString("결과", "일치");
                 _tvObjectList.refresh();
     			Alert alert = new Alert(AlertType.INFORMATION);
     			alert.setTitle(new Object() {}.getClass().getEnclosingMethod().getName());
@@ -575,6 +801,15 @@ public class ObjectList {
 //    	//RowData.set(0, String.valueOf(!Boolean.valueOf(rowData.get(0))));
 //     	_tvObjectList.refresh();
 //    }
+    private void clearResults() {
+    	ObservableList<RowData> rows = _tvObjectList.getSelectionModel().getSelectedItems();
+    	int index = _viewManager.getColumnIndex("결과");
+    	if(rows.size() <= 1) {
+    		rows = (ObservableList<RowData>)_tvObjectList.getItems();
+    	}
+		rows.forEach(row -> row.setValueString(index, "-"));
+    	_tvObjectList.refresh();
+    }
     
     private void checkListAll() {
     	ObservableList<RowData> rows = _tvObjectList.getSelectionModel().getSelectedItems();
@@ -584,7 +819,6 @@ public class ObjectList {
     	}
 		rows.forEach(row -> row.setValueBoolean(index, true));
     	_tvObjectList.refresh();
-    	
     }
 
     private void unCheckListAll() {
@@ -666,7 +900,7 @@ public class ObjectList {
 				String sResult   = "불일치";
 				String[] sConnNames = new String[2];
 				String[] sSchemas   = new String[2];
-				String[] sText      = new String[2];
+				String[][] sText      = {{"",""},{"",""}};
 				sConnNames[0] = row.getValueString("SOURCE");
 				sConnNames[1] = row.getValueString("TARGET");
 				sSchemas[0]   = row.getValueString("SCHEMA");
@@ -689,28 +923,28 @@ public class ObjectList {
 				
 				if(sDBMS.equalsIgnoreCase("ORACLE")) {
 					for(int i=0; i < sConnNames.length; i++) {
-						sText[i] = dbWorks.get(sConnNames[i]).getOracleText(sSchemas[i], sObjName, sObjType);
-						sText[i] = sText[i].replaceAll(" ", "");
+						sText[i] = dbWorks.get(sConnNames[i]).getOracleText(sSchemas[i], sObjName, sObjType, true);
+						sText[i][1] = sText[i][1].replaceAll(" ", "");
 					}
 				}
 				else if(sDBMS.equalsIgnoreCase("MS-SQL")) {
 					for(int i=0; i < sConnNames.length; i++) {
-						sText[i] = dbWorks.get(sConnNames[i]).getMSSQLText(sSchemas[i], "dbo", sObjName);
-						sText[i] = sText[i].replaceAll(" ", "");
+						sText[i] = dbWorks.get(sConnNames[i]).getMSSQLText(sSchemas[i], "dbo", sObjName, sObjType, true);
+						sText[i][1] = sText[i][1].replaceAll(" ", "");
 					}
 				}
 				else {
 					sResult = "FAIL: DBMS=" + sDBMS;
 				}
 				
-				if(!sText[0].isEmpty() && sText[0].equalsIgnoreCase(sText[1])) {
+				if(!sText[0][0].equals("1") && sText[0][1].equalsIgnoreCase(sText[1][1])) {
 					sResult = "일치";
 				}
-				System.out.println("source:" + sText[0]);
+				System.out.println("source:" + sText[0][1]);
 				
-				System.out.println("target:" + sText[1]);
+				System.out.println("target:" + sText[1][1]);
 
-				row.setValueString("비교", sResult);
+				row.setValueString("결과", sResult);
 			};
 		});
 		
@@ -736,7 +970,7 @@ public class ObjectList {
 		if (_contextMenu == null) {
 			_contextMenu = new ContextMenu();
 			
-			MenuItem[] menuItems = new MenuItem[6];
+			MenuItem[] menuItems = new MenuItem[10];
 			
 			menuItems[0] = new MenuItem("소스 비교 보기");
 			menuItems[1] = new MenuItem("전체 소스 비교");
@@ -744,6 +978,11 @@ public class ObjectList {
 			menuItems[3] = new MenuItem("전체 선택 해제");
 			menuItems[4] = new MenuItem("존재 여부 확인");
 			menuItems[5] = new MenuItem("소스 보기");
+			menuItems[6] = new MenuItem("소스 내려받기(전체)");
+			menuItems[7] = new MenuItem("소스 내려받기");
+			menuItems[8] = new MenuItem("결과삭제");
+			menuItems[9] = new MenuItem("파일생성");
+			
 			//소스 비교 보기
 			menuItems[0].setOnAction(
 					new EventHandler<ActionEvent>() {
@@ -803,8 +1042,47 @@ public class ObjectList {
 				}
 			);
 			
+			//소스내려받기(전체)
+			menuItems[6].setOnAction(
+				new EventHandler<ActionEvent>() {
+					@Override
+					public void handle(ActionEvent event ) {
+						getObjectSourceAll();
+					}
+				}
+			);
 			
-	    	_contextMenu.getItems().addAll(menuItems);
+			//소스내려받기
+			menuItems[7].setOnAction(
+				new EventHandler<ActionEvent>() {
+					@Override
+					public void handle(ActionEvent event ) {
+						getObjectSource();
+					}
+				}
+			);
+
+			//결과 삭제
+			menuItems[8].setOnAction(
+					new EventHandler<ActionEvent>() {
+						@Override
+						public void handle(ActionEvent event ) {
+							clearResults();
+						}
+					}
+				);
+			
+			//결과 삭제
+			menuItems[9].setOnAction(
+					new EventHandler<ActionEvent>() {
+						@Override
+						public void handle(ActionEvent event ) {
+							genScriptForApply();
+						}
+					}
+				);
+
+			_contextMenu.getItems().addAll(menuItems);
 	    	_contextMenu.setConsumeAutoHidingEvents(true);
 		} 
 		_contextMenu.show(_tvObjectList, event.getScreenX(), event.getScreenY());

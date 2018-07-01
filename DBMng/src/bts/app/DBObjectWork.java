@@ -29,10 +29,10 @@ public class DBObjectWork {
 		return "DBObjectWork -> " + _dbconnection.toString();
 	}
 	
-	public String getOracleText(String sOwner, String sObjectName, String sObjectType) {
+	public String[] getOracleText(String sOwner, String sObjectName, String sObjectType, boolean isBatch) {
 		
 		//oConn.setCatalog(sDBName);
-		String sResult;
+		String sResult[] = {"",""};
 		String sSQL = 
 				"SELECT OWNER, OBJECT_TYPE , OBJECT_NAME, CREATED, LAST_DDL_TIME \r\n" + 
 				"     , DBMS_METADATA.GET_DDL(OBJECT_TYPE=>REPLACE(A.OBJECT_TYPE, ' ', '_'), NAME=>A.OBJECT_NAME, SCHEMA=>A.OWNER) DDL \r\n" + 
@@ -46,29 +46,41 @@ public class DBObjectWork {
 				" ORDER BY A.OWNER, A.OBJECT_TYPE, A.OBJECT_NAME";
 		try {
 			PreparedStatement oStmt = _oConn.prepareStatement(sSQL);
-			oStmt.setString(1, sOwner);
-			oStmt.setString(2, sObjectName);
+			oStmt.setString(1, sOwner.toUpperCase());
+			oStmt.setString(2, sObjectName.toUpperCase());
 			oStmt.setString(3, sObjectType.toUpperCase());
 			ResultSet oRs = oStmt.executeQuery();
 			if (oRs.next()) {
-				sResult = oRs.getString(6);
-//				SimpleDateFormat fmt = new SimpleDateFormat("yyyyMMdd_HHmmss");
-//				System.out.println(fmt.format(oRs.getDate(4))+ " , "+ fmt.format(oRs.getDate(5)));
+				sResult[0] = "1";
+				if(isBatch) {
+					SimpleDateFormat fmt = new SimpleDateFormat("yyyyMMdd_HHmmss");
+					sResult[1] = String.format("/*** [%s] %s.%s  : modified %s ***/\r\n"
+							, sObjectType, sOwner, sObjectName, fmt.format(oRs.getDate(5)));
+					sResult[1] = sResult[1] + oRs.getString(6).replaceFirst("\nALTER TRIGGER ", "\n/\r\nALTER TRIGGER " );
+					sResult[1] = sResult[1] + "\r\n/\r\n----------------------------------------------------------------------------------\r\n\r\n";
+	//				SimpleDateFormat fmt = new SimpleDateFormat("yyyyMMdd_HHmmss");
+	//				System.out.println(fmt.format(oRs.getDate(4))+ " , "+ fmt.format(oRs.getDate(5)));
+				}
+				else {
+					sResult[1] = oRs.getString(6);
+				}
 			} else {
-				sResult = "";
+				sResult[0] = "0";
+				sResult[1] = "";
 			}
 			oRs.close();
 		} catch (Exception e) {
 			// TODO: handle exception
-			sResult = "";
+			sResult[0] = "-1";
+			sResult[1] = e.getMessage();
 			e.printStackTrace();
 		}
 		return sResult;
 	}
 
-	public String getMSSQLText(String sDBName, String sOwner, String sObjectName) {
+	public String[] getMSSQLText(String sDBName, String sOwner, String sObjectName, String sObjectType, boolean isBatch) {
 		
-		String sResult;
+		String sResult[] = {"",""};
 		String sSQL = "SELECT DB_NAME()  DB_NAME \r\n" + 
 			      "     , CASE WHEN A.TYPE IN ('FN','FS','FT','IF','TF') THEN 'FUNCTION' \r\n" + 
 			      "            WHEN A.TYPE = 'P'  THEN 'PROCEDURE' \r\n" + 
@@ -100,18 +112,34 @@ public class DBObjectWork {
 			System.out.println(sDBName + ", " + sOwner + ", " + sObjectName);
 			ResultSet oRs = oStmt.executeQuery();
 			if (oRs.next()) {
-				sResult = oRs.getString(5);
+				sResult[0] = "1";
+				if(isBatch) {
+					SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+//					System.out.println(fmt.format(oRs.getTimestamp(8))+ " , "+ fmt.format(oRs.getTimestamp(9)));
+					sResult[1] = String.format("/*** [%s] %s.%s : modified %s ***/\r\n\r\nUSE [%s]\r\nGO\r\n"
+							                  , sObjectType, sOwner, sObjectName, fmt.format(oRs.getTimestamp(9)), oRs.getString(1));
+					sResult[1] = sResult[1] + String.format("IF OBJECT_ID('%s.%s','%s') IS NULL \r\n    DROP %s %s.%s; \r\nGO\r\n"
+							                   , sOwner, sObjectName, oRs.getString(6)
+							                   , sObjectType, sOwner, sObjectName
+							                  );
+					sResult[1] = sResult[1] + oRs.getString(5);
+					sResult[1] = sResult[1] + "\r\nGO\r\n---------------------------------------------------------------------------------------\r\n";
+				}
+				else { 
+					sResult[1] = oRs.getString(5);
+				}
+				  
 				//System.out.println(oRs.getString(8)+ " , "+ oRs.getString(9));
-				SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-				System.out.println(fmt.format(oRs.getTimestamp(8))+ " , "+ fmt.format(oRs.getTimestamp(9)));
-
+				
 			} else {
-				sResult = "";
+				sResult[0] = "0";
+				sResult[1] = "";
 			}
 			oRs.close();
 		} catch (Exception e) {
 			// TODO: handle exception
-			sResult = "";
+			sResult[0] = "-1";
+			sResult[1] = e.getMessage();
 			e.printStackTrace();
 		}
 		return sResult;
