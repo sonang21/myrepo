@@ -118,7 +118,7 @@ public class DBObjectWork {
 //					System.out.println(fmt.format(oRs.getTimestamp(8))+ " , "+ fmt.format(oRs.getTimestamp(9)));
 					sResult[1] = String.format("/*** [%s] %s.%s : modified %s ***/\r\n\r\nUSE [%s]\r\nGO\r\n"
 							                  , sObjectType, sOwner, sObjectName, fmt.format(oRs.getTimestamp(9)), oRs.getString(1));
-					sResult[1] = sResult[1] + String.format("IF OBJECT_ID('%s.%s','%s') IS NULL \r\n    DROP %s %s.%s; \r\nGO\r\n"
+					sResult[1] = sResult[1] + String.format("IF OBJECT_ID('%s.%s','%s') IS NOT NULL \r\n    DROP %s %s.%s; \r\nGO\r\n"
 							                   , sOwner, sObjectName, oRs.getString(6)
 							                   , sObjectType, sOwner, sObjectName
 							                  );
