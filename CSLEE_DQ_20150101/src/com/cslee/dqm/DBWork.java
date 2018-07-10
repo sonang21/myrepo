@@ -210,6 +210,7 @@ public class DBWork extends Thread {
 	
 	
 	public static void main(String[] args) {
+		//test multi work...
 		DBWork test1 = new DBWork("default");
 		DBWork test2 = new DBWork("default");
 		DBWork test3 = new DBWork("default");

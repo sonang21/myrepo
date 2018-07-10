@@ -162,6 +162,7 @@ public class MigAnalPricelist extends Thread {
 			System.out.println(String.format("Query Start (%d) .... ", _nDutyCode));
 			nSpotTimeBefore = System.currentTimeMillis();
 			ResultSet oRs = oStmtS.executeQuery(strSqlS);
+			
 			dElapsedSec =  (System.currentTimeMillis() - nSpotTimeBefore) /1000.0;
 			System.out.println(String.format("Fetch Start (%d) .... %.1f sec", _nDutyCode, dElapsedSec));
 
@@ -194,6 +195,12 @@ public class MigAnalPricelist extends Thread {
 			bulkCopy.setBulkCopyOptions(copyOptions);
 			
 			bulkCopy.setDestinationTableName(_sTargetTable);
+			bulkCopy.clearColumnMappings();
+			ResultSetMetaData oRsMeta = oRs.getMetaData();
+			for(int i=1; i <= oRsMeta.getColumnCount(); i++) {
+				bulkCopy.addColumnMapping(oRsMeta.getColumnName(i),oRsMeta.getColumnName(i));
+			}
+			
 			
 			bulkCopy.writeToServer(oRs);
 			bulkCopy.close();
