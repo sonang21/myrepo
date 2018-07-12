@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SAMPLE MIGRATION CONFIG type : bulk(mssql only)/batch-->
+<migration jobid="AN01" jobname="ANALSTORE.MIG_TBL_PRICELIST" type="bulk" threads="15" batchsize="200" fetchsize="400" reportsec="10">
+    <target>
+        <dbname type="mssql">ANALSTORE_DB</dbname>
+        <table>MIG_TBL_PRICELIST</table>
+    </target>
+    <source>
+        <dbname>ENURI_DB</dbname>
+        <!--  <table>DBENURI.TBL_GOODS</table>  -->
+        <table>DBENURI.ASIS_TBL_PRICELIST A</table>
+    </source>
+    <logdb>MIGLOG_DB</logdb>
+    
+	<!-- option=all/sub/skip/ -->
+	<count option="sub"> SELECT /*+ PARALLE(4) */ COUNT(*) </count>
+    <select>
+SELECT /*+ PARALLEL(4) */
+       A.PL_NO                                             pl_no
+     , A.MODELNO                                           modelno
+     , A.SHOP_CODE                                         shop_code
+     , A.GOODSNM                                           goodsnm  --5
+     , A.CA_CODE                                           ca_code
+     , A.PRICE                                             price
+     , A.URL                                               url
+     , A.NOTE                                              note
+     , A.SRVFLAG                                           srvflag
+     , A.STATUS                                            status
+     , A.AUTHFLAG                                          authflag
+     , A.SOLDFLAG                                          soldflag
+     , A.SOLDDATE                                          solddate
+     , A.RIGHTNLEFT                                        rightnleft
+     , A.ESSTOCKFLAG                                       esstockflag
+     , A.IMGURL                                            imgurl
+     , A.COUPON                                            coupon
+     , A.AUTHVCODE                                         authvcode
+     , A.JOBTYPE                                           jobtype
+     , A.AIRCONFEETYPE                                     airconfeetype
+     , A.DELPRICE                                          delprice
+     , A.ACCOUNT_YN                                        account_yn
+     , A.IMGURLFLAG                                        imgurlflag
+     , A.INSTANCE_PRICE                                    instance_price
+     , A.GOODSFACTORY                                      goodsfactory
+     , A.GOODSCODE                                         goodscode
+     , A.DELIVERYINFO                                      deliveryinfo
+     , A.CASHBACK                                          cashback
+     , A.FREEINTEREST                                      freeinterest
+     , A.AGREE_MONTH                                       agree_month
+     , A.POPULAR                                           popular
+     , A.HOMEFLAG                                          homeflag
+     , A.DELIVERYINFO2                                     deliveryinfo2
+     , A.DELIVERYTYPE2                                     deliverytype2
+     , A.PRICE_CARD                                        price_card
+     , A.OPTION_FLAG                                       option_flag
+     , A.OPTION_FLAG2                                      option_flag2
+     , A.CATALOG_FLAG                                      catalog_flag
+     , A.POWER_FLAG                                        power_flag
+     , A.BID_FLAG                                          bid_flag
+     , A.ENURI_USER_ID                                     enuri_user_id
+     , A.PRICE_FLAG                                        price_flag
+     , A.DELIVERY_LEV                                      delivery_lev
+     , A.SET_YN                                            set_yn
+     , A.STORE_FLAG                                        store_flag
+     , A.CA_CODE_DEPT                                      ca_code_dept
+     , A.MOBILE_FLAG                                       mobile_flag
+     , A.POPULAR2                                          popular2
+     , A.AUTHDATE                                          authdate
+     , A.U_DATE                                            u_date
+     , A.MOBILE_URL                                        mobile_url
+--     , A.BBS_NUM                                           bbs_num
+--     , A.BBS_POINT                                         bbs_point
+--     , A.CHK_CSM_DATE                                      chk_csm_date
+--     , A.CHK_CSM_FLAG                                      chk_csm_flag
+--     , A.CHK_TRG_DATE                                      chk_trg_date
+--     , A.CHK_TRG_FLAG                                      chk_trg_flag
+--     , A.ORGN_DTM                                          orgn_dtm
+    </select>
+    <where> <!-- 전환할 대상 필터링 조건 -->
+        WHERE 1 = 1
+    </where>
+    
+    <!-- 여러개로 분할 할 경우 분할 조건, @TOTAL, @PART만 사용 가능, where에 맞춰서 추가로 작성, where 구문이 없을 경우 where를 포함하여 작성 -->
+    <split> 
+    	AND MOD(A.PL_NO, @TOTAL) = @PART
+    </split>
+
+</migration>
