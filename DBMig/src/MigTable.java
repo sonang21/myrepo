@@ -57,12 +57,13 @@ public class MigTable  {
 			args[1] = "migDev";
 		}
 		migWork(args);
+		
 //		testJDBC();
 	}
 	
 	public static void migWork(String[] args) {
 		if(args.length < 1) {
-			System.out.println("Usage : " + MigTable.class.getSimpleName() + " <xmlfile> [log_group_prefix]");
+			System.err.println("Usage : " + MigTable.class.getSimpleName() + " <xmlfile> [log_group_prefix]");
 			return;
 		}
 		
@@ -79,6 +80,7 @@ public class MigTable  {
 			long nTimeCurrent = nTimeStart;
 			long nTimeBefore = nTimeStart;
 			double dElapsedSec = 0.0;
+			double dTotalSec = 0.0;
 			long nRowsCurrent = 0;
 			long nRowsBefore = 0;
 			
@@ -87,19 +89,28 @@ public class MigTable  {
 				migWorker[i].start();
 			}
 
-			// bulk insert 가 아니면서 보고 간격(초)가 0 이상인 경우 보고간격 주기로 현황 출력
+			// 보고 간격(초)가 0 이상인 경우 보고간격 주기로 현황 출력
 			//if(!migInfo._sInsertType.equalsIgnoreCase("bulk") && migInfo._nReportSec > 0) {
 			if(migInfo._nReportSec > 0) {
 					while (migInfo.getRunCount() > 0) {
 					Thread.sleep(migInfo._nReportSec * 1000);
 					nTimeCurrent = System.currentTimeMillis();
 					dElapsedSec =  (nTimeCurrent - nTimeBefore) /1000.0;
+					dTotalSec = (nTimeCurrent - nTimeStart) / 1000.0;
 					nRowsCurrent = 0;
 					for(int i=0; i < migWorker.length; i++) {
 						nRowsCurrent += migWorker[i].getResultCount();
 					}
-					System.out.println( String.format("RUNNING[%d] : Total %d Rows, %d Rows,  Sec: %.0f,  %.1f rows/sec"
-							, migInfo.getRunCount(), nRowsCurrent, nRowsCurrent-nRowsBefore, dElapsedSec,  (nRowsCurrent-nRowsBefore) / dElapsedSec));
+					System.out.format("Running.%s[%d]:[%,d] %,d Rows(%.1f%%), +%,d,  %,.1f rows/sec (%02d:%02d:%02d)\n"
+							        , migInfo._insertType.name().substring(0, 1)
+									, migInfo.getRunCount() 
+									, migInfo._nSourceCount
+									, nRowsCurrent
+									, migInfo._nSourceCount > 0 ? (double) nRowsCurrent / migInfo._nSourceCount * 100.0 : 0.0 
+									, nRowsCurrent-nRowsBefore, (nRowsCurrent-nRowsBefore) / dElapsedSec
+									, (int) dTotalSec / 3600, (int) (dTotalSec % 3600) / 60, (int)(dTotalSec % 60)
+								);
+
 					nTimeBefore = nTimeCurrent;
 					nRowsBefore = nRowsCurrent;
 				}	
@@ -111,16 +122,20 @@ public class MigTable  {
 				}
 			}
 			
-			dElapsedSec =  (System.currentTimeMillis() - nTimeStart) /1000.0;
+			dTotalSec =  (System.currentTimeMillis() - nTimeStart) /1000.0;
 			nRowsCurrent = 0;
 			for(int i=0; i < migWorker.length; i++) {
 				nRowsCurrent += migWorker[i].getResultCount();
 			}
 
-			System.out.println( String.format("## END : Total %d=>%s Rows(%d), Sec: %.0f,  %.1f rows/sec"
-					, migInfo._nSourceCount, nRowsCurrent
-					, (nRowsCurrent - migInfo._nSourceCount)
-					, dElapsedSec, nRowsCurrent / dElapsedSec));
+			System.out.println( String.format("## END : Target %,d => Result %,d Rows(%d), Sec: %.0f,  %,.1f rows/sec (%02d:%02d:%02.1f)"
+									, migInfo._nSourceCount, nRowsCurrent
+									, (nRowsCurrent - migInfo._nSourceCount)
+									, dTotalSec, nRowsCurrent / dTotalSec
+									, (int) dTotalSec / 3600, (int) (dTotalSec % 3600) / 60, (dTotalSec % 60.0)
+									)
+					
+					);
 			
 		}
 		catch (Exception ex) {
@@ -151,10 +166,16 @@ public class MigTable  {
 //====================================================================================================//
 
 class MigInfo {
+	public enum COUNT_OPTION { ALL, SUB, SKIP }; 
+	// all : 원본 건수를 전체 건수와 개별 작업단위의 건수를 모두 쿼리함 (기본)
+	// sub : 개별 작업에서만 건수를 쿼리함 : 전체 건수는 개별 작업의 건수를 합산
+	// skip : 건수를 조회하지 않음 : 건수검증 별도 시행
+	public enum INSERT_TYPE { INSERT, BULKMS};
 	public String _sLogGroup = "null";
 	public String _sJobId;
 	public String _sJobName;
-	public String _sInsertType = "batch";
+//	public String _sInsertType = "batch";
+	public INSERT_TYPE _insertType = INSERT_TYPE.INSERT;
 
 	public String _sSourceDB;
 	public String _sTargetDB;
@@ -164,11 +185,9 @@ class MigInfo {
 	public String _sLogDB;
 	public String _sSelectList;
 	public String _sSelectCount;
-	public String _sSkipCount;
+	public COUNT_OPTION _countOption = COUNT_OPTION.ALL;
 	public String _sWhereCondition;
 	public String _sSplitCondition;
-	
-	
 
 	public int _nBatchSize = 100; //5000; default
 	public int _nFetchSize = 100; //5000; default
@@ -190,6 +209,11 @@ class MigInfo {
 		_nSourceCount = getSourceCount();
 	}
 	
+	//대상 원본 건수를 증가시킴 : 대상건수를 쿼리하지 않고, Worker에서 쿼리한 TargetCount를 합산할 때 사용
+	public synchronized void addSourceCount(long nRows) {
+		_nSourceCount += nRows;
+	}
+
 	//처리된 전체 행수를 입력값 만큼 증가시킴
 	public synchronized void addTotalRows(long nRows) {
 		_nTotalRows += nRows;
@@ -215,7 +239,7 @@ class MigInfo {
 	}
 	
 	public String toString() {
-		String sResult = String.format("== MigInfo(%s) == \r\n" +
+		String sResult = String.format("\n\n============ MigInfo(%s) ============ \r\n" +
 				"Insert Type  : %s, Threads = %d \r\n" +
 				"JobId=%s, JobName=%s \r\n" +
 				"Target DB    : %s \r\n" +
@@ -223,16 +247,16 @@ class MigInfo {
 				"Source DB    : %s \r\n" +
 				"Source Table : %s \r\n" +
 				"== Select ==: %s \r\n" +
-				"== Split   ==: %s \r\n================================" 
+				"== Split   ==: %s \r\n=====================================" 
 				, this.getClass().getSimpleName()
-				, _sInsertType, _nThreadCount
+				, _insertType.name(), _nThreadCount
 				, _sJobId, _sJobName
 				, _sTargetDB
 				, _sTargetTable
 				, _sSourceDB
 				, _sSourceTable
-				, _sSelectList
-				, _sSplitCondition);
+				, _sSelectList.trim()
+				, _sSplitCondition.trim());
 		System.out.println(sResult);
 		return sResult;
 
@@ -251,28 +275,40 @@ class MigInfo {
 //		    XPathExpression expr = xpath.compile(sNodePath + "/text()");
 		    Element element = (Element) xpath.evaluate("/migration", doc, XPathConstants.NODE);
 		    _sJobId = element.getAttribute("jobid");
-		    _sJobName = element.getAttribute("jobname");
-		    _sInsertType = element.getAttribute("type");
+		    _sJobName = element.getAttribute("jobname").trim();
+		    String sInsertType = element.getAttribute("type");
+		    try {
+		    	_insertType = INSERT_TYPE.valueOf(sInsertType.toUpperCase().trim());
+		    }
+		    catch (Exception ex) {
+		    	System.err.format("INSERT_TYPE %s is invalid ... using default : INSERT\n", sInsertType);
+		    	_insertType = INSERT_TYPE.INSERT;
+		    }
 		    _nThreadCount = Integer.valueOf(element.getAttribute("threads"));
 		    _nBatchSize = Integer.valueOf(element.getAttribute("batchsize"));
 		    _nFetchSize = Integer.valueOf(element.getAttribute("fetchsize"));
 		    _nReportSec = Integer.valueOf(element.getAttribute("reportsec"));
 		    
-		    _sTargetDB =    ((Element)xpath.evaluate("/migration/target/dbname", doc, XPathConstants.NODE)).getTextContent();
-		    _sTargetTable = ((Element)xpath.evaluate("/migration/target/table", doc, XPathConstants.NODE)).getTextContent();
-		    _sTargetDBType = ((Element)xpath.evaluate("/migration/target/dbname", doc, XPathConstants.NODE)).getAttribute("type");
+		    _sTargetDB =    ((Element)xpath.evaluate("/migration/target/dbname", doc, XPathConstants.NODE)).getTextContent().trim();
+		    _sTargetTable = ((Element)xpath.evaluate("/migration/target/table", doc, XPathConstants.NODE)).getTextContent().trim();
+		    _sTargetDBType = ((Element)xpath.evaluate("/migration/target/dbname", doc, XPathConstants.NODE)).getAttribute("type").trim();
 
-		    _sSourceDB =    ((Element)xpath.evaluate("/migration/source/dbname", doc, XPathConstants.NODE)).getTextContent();
-		    _sSourceTable = ((Element)xpath.evaluate("/migration/source/table", doc, XPathConstants.NODE)).getTextContent();
-		    _sLogDB =       ((Element)xpath.evaluate("/migration/logdb", doc, XPathConstants.NODE)).getTextContent();
+		    _sSourceDB =    ((Element)xpath.evaluate("/migration/source/dbname", doc, XPathConstants.NODE)).getTextContent().trim();
+		    _sSourceTable = ((Element)xpath.evaluate("/migration/source/table", doc, XPathConstants.NODE)).getTextContent().trim();
+		    _sLogDB =       ((Element)xpath.evaluate("/migration/logdb", doc, XPathConstants.NODE)).getTextContent().trim();
 		    
-		    _sSelectCount    = ((Element)xpath.evaluate("/migration/selectcount", doc, XPathConstants.NODE)).getTextContent();
-		    _sSkipCount      = ((Element)xpath.evaluate("/migration/selectcount", doc, XPathConstants.NODE)).getAttribute("skip");
-		    
-		    _sSelectList     = ((Element)xpath.evaluate("/migration/select", doc, XPathConstants.NODE)).getTextContent();
-		    _sWhereCondition = ((Element)xpath.evaluate("/migration/where", doc, XPathConstants.NODE)).getTextContent();
-		    _sSplitCondition = ((Element)xpath.evaluate("/migration/split", doc, XPathConstants.NODE)).getTextContent();
-		    
+		    _sSelectCount    = ((Element)xpath.evaluate("/migration/count", doc, XPathConstants.NODE)).getTextContent().trim();
+		    String sCountOption = ((Element)xpath.evaluate("/migration/count", doc, XPathConstants.NODE)).getAttribute("option");
+		    try {
+		    	_countOption = COUNT_OPTION.valueOf(sCountOption.toUpperCase().trim());
+		    } catch (Exception ex) {
+		    	System.err.format("Count Option %s is invalid ... using default : ALL\n", sCountOption);
+		    	_countOption = COUNT_OPTION.ALL;
+		    }		    
+		    _sSelectList     = ((Element)xpath.evaluate("/migration/select", doc, XPathConstants.NODE)).getTextContent().trim();
+		    _sWhereCondition = ((Element)xpath.evaluate("/migration/where", doc, XPathConstants.NODE)).getTextContent().trim();
+		    _sSplitCondition = ((Element)xpath.evaluate("/migration/split", doc, XPathConstants.NODE)).getTextContent().trim();
+
 //		    NodeList nodes = doc.getElementsByTagName("target").item(0).getChildNodes();
 //		    for(int i=0, size = nodes.getLength(); i < size; i++) {
 //		    	System.out.println("-- " + nodes.item(i).getNodeName());
@@ -302,10 +338,11 @@ class MigInfo {
 	
 	private long getSourceCount() {
 		long nSourceCount = -1;
-		if (_sSkipCount.equalsIgnoreCase("all")) return nSourceCount;
-		
-		String sSqlCount = String.format("%s from %s %s", _sSelectCount, _sSourceTable , _sWhereCondition);
-		System.out.println("getSourceCount() : " + sSqlCount);
+		if (_countOption == COUNT_OPTION.SKIP || _countOption == COUNT_OPTION.SUB) {
+			return nSourceCount;
+		}
+		String sSqlCount = String.format("%s\r\n from %s\r\n %s", _sSelectCount, _sSourceTable , _sWhereCondition);
+//		System.out.println("getSourceCount() : sql =  " + sSqlCount);
 		try (
 				Connection oConn = (new DBConnection(_sSourceDB)).dbConnect();
 				Statement oStmt = oConn.createStatement();
@@ -320,7 +357,7 @@ class MigInfo {
 			ex.printStackTrace();
 		}
 		
-		System.out.println(String.format("getSourceCount() : source = %d rows", nSourceCount));
+//		System.out.println(String.format("getSourceCount() : count = %d rows", nSourceCount));
 		
 		return nSourceCount;		
 	}
@@ -341,15 +378,30 @@ class MigWorker extends Thread {
 	private String _sErrorMessage = "";
 
 	BulkResultSet bulkRowSet;
+	Connection _oConnSource;
+	Connection _oConnTarget;
 	
 	public MigWorker(MigInfo migInfo) {
 		_migInfo = migInfo;
 		_nThreadNumber = _migInfo.addRunCount() - 1;
 		_nBatchSize = _migInfo._nBatchSize;
 		_nFetchSize = _migInfo._nFetchSize;
-		
-		System.out.println(String.format("MigWorker(%d) ... created", _nThreadNumber));
+		System.out.println(String.format("MigWorker(%d) ..... created", _nThreadNumber));
 	}
+	public void dbConnect() {
+		_oConnSource = new DBConnection(_migInfo._sSourceDB).dbConnect();
+		_oConnTarget = new DBConnection(_migInfo._sTargetDB).dbConnect();
+	}
+	public void dbClose() {
+		try {
+			if(_oConnSource  != null) if(!_oConnSource.isClosed()) _oConnSource.close();
+			if(_oConnTarget  != null) if(!_oConnTarget.isClosed()) _oConnTarget.close();
+		}
+		catch (Exception ex) {
+			ex.printStackTrace();
+		}
+	}
+	
 	public void setThreadNumber(int nThreadNumber) {
 		_nThreadNumber = nThreadNumber;
 	}
@@ -365,11 +417,11 @@ class MigWorker extends Thread {
 	
 	@Override
 	public void run() {
-		
 		System.out.println(String.format("MigWorker(%d) ..... run start", _nThreadNumber));
+		dbConnect();
 		logStart();
 		
-		if(_migInfo._sInsertType.equalsIgnoreCase("bulk")) {
+		if(_migInfo._insertType == MigInfo.INSERT_TYPE.BULKMS) {
 			bulkInsert();
 		}
 		else {
@@ -377,8 +429,10 @@ class MigWorker extends Thread {
 		}
 		
 		logEnd();
+		dbClose();
 		
 		_migInfo.reduceRunCount();
+		
 		System.out.println(String.format("MigWorker(%d) ..... run end", _nThreadNumber));
 	}
 	
@@ -387,7 +441,7 @@ class MigWorker extends Thread {
 		long nSpotTimeBefore = nTimeStart ;
 		double dElapsedSec = 0.0;
 
-		String strSqlS = String.format("%s from %s %s %s"
+		String strSqlS = String.format("%s\r\n from %s\r\n %s\r\n %s\r\n"
 				, _migInfo._sSelectList
 				, _migInfo._sSourceTable
 				, _migInfo._sWhereCondition 
@@ -396,15 +450,13 @@ class MigWorker extends Thread {
 						.replace("@PART",  String.valueOf(_nThreadNumber))
 		);
 		
-		System.out.println("bulkInsert() SQL: " + strSqlS);
+//		System.out.println("bulkInsert() SQL: " + strSqlS);
 
 		try (
-				Connection oConnS = (new DBConnection(_migInfo._sSourceDB)).dbConnect();
-				Connection oConnT = (new DBConnection(_migInfo._sTargetDB)).dbConnect();
-				
-//				Statement oStmtS = oConnS.createStatement();
-				Statement oStmtS = oConnS.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-				Statement oStmtT = oConnT.createStatement();
+//				Connection oConnS = (new DBConnection(_migInfo._sSourceDB)).dbConnect();
+//				Connection oConnT = (new DBConnection(_migInfo._sTargetDB)).dbConnect();
+				Statement oStmtS = _oConnSource.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+//				Statement oStmtT = _oConnTarget.createStatement();
 		) 
 		{
 			oStmtS.setFetchSize(_nFetchSize);
@@ -421,7 +473,7 @@ class MigWorker extends Thread {
 			//SQLServerBulkCopy bulkCopy = new SQLServerBulkCopy(oConnT);
 //			oConnT.setCatalog("ANALSTORE");
 			
-			SQLServerBulkCopy bulkCopy = new SQLServerBulkCopy(oConnT);
+			SQLServerBulkCopy bulkCopy = new SQLServerBulkCopy(_oConnTarget);
 			SQLServerBulkCopyOptions copyOptions = new SQLServerBulkCopyOptions();
 			copyOptions.setKeepIdentity(true);
 			copyOptions.setBatchSize(_nBatchSize);
@@ -437,7 +489,7 @@ class MigWorker extends Thread {
 			for(int i=1; i <= oRsMeta.getColumnCount(); i++) {
 //				bulkCopy.addColumnMapping(oRsMeta.getColumnName(i), oRsMeta.getColumnName(i).toLowerCase());
 				bulkCopy.addColumnMapping(i, oRsMeta.getColumnName(i).toLowerCase());
-				System.out.println("col mapping : " + oRsMeta.getColumnName(i) + " -> " + oRsMeta.getColumnName(i).toLowerCase());
+//				System.out.println("col mapping : " + oRsMeta.getColumnName(i) + " -> " + oRsMeta.getColumnName(i).toLowerCase());
 			}
 			
 			try {
@@ -451,7 +503,7 @@ class MigWorker extends Thread {
 				_sResultCode = "ERROR";
 				_sErrorCode = ex.getClass().getSimpleName();
 				_sErrorMessage =ex.getMessage();
-				System.out.println("######################################################");
+				System.err.println("######################################################");
 				ex.printStackTrace();
 			}
 			
@@ -463,14 +515,11 @@ class MigWorker extends Thread {
 		catch (Exception ex) {
 			ex.printStackTrace();
 		}
-
-
-		
 	}
 	
 	
 	private void batchInsert() {
-		System.out.println("batchInsert() .... start");
+		System.out.format("batchInsert(%d) .... start\n", _nThreadNumber);
 		long nTimeStart = System.currentTimeMillis();
 		double dElapsedSec = 0.0;
 		//long nRows = 0;
@@ -481,10 +530,10 @@ class MigWorker extends Thread {
 		PreparedStatement oStmtT  = null;
 		Statement oStmtCommit = null;
 		
-		Connection oConnS = null;
-		Connection oConnT = null;
+		Connection oConnS = _oConnSource;
+		Connection oConnT = _oConnTarget;
 		
-		String strSqlS = String.format("%s from %s %s %s"
+		String strSqlS = String.format("%s\r\n from %s\r\n %s\r\n %s"
 				, _migInfo._sSelectList
 				, _migInfo._sSourceTable
 				, _migInfo._sWhereCondition 
@@ -492,8 +541,6 @@ class MigWorker extends Thread {
 						.replace("@TOTAL", String.valueOf(_migInfo._nThreadCount))
 						.replace("@PART",  String.valueOf(_nThreadNumber))
 		);
-		
-		System.out.println("SRC SQL: " + strSqlS);
 		
 		String strSqlT1 = "insert into " + _migInfo._sTargetTable + "(";
 		String strSqlT2 = " values(";
@@ -505,8 +552,8 @@ class MigWorker extends Thread {
 		}
 		
 		try {
-			oConnS = (new DBConnection(_migInfo._sSourceDB)).dbConnect();
-			oConnT = (new DBConnection(_migInfo._sTargetDB)).dbConnect();
+//			oConnS = (new DBConnection(_migInfo._sSourceDB)).dbConnect();
+//			oConnT = (new DBConnection(_migInfo._sTargetDB)).dbConnect();
 			oStmtS = oConnS.createStatement(ResultSet.TYPE_FORWARD_ONLY , ResultSet.CONCUR_READ_ONLY);
 			oStmtS.setFetchSize(_nFetchSize);
 			
@@ -532,7 +579,7 @@ class MigWorker extends Thread {
 			
 			while(oRs.next()) {
 				_nResultCount ++;
-				sKeyValues[(int)(_nResultCount % _nBatchSize)] = oRs.getString(1);
+//				sKeyValues[(int)(_nResultCount -1) % _nBatchSize)] = oRs.getString(1);
 				
 				for(int i=1; i <= oRsMeta.getColumnCount(); i++) {
 					//System.out.print(String.valueOf(i) + " ");
@@ -581,6 +628,7 @@ class MigWorker extends Thread {
 				if(_nResultCount % _nBatchSize == 0 ) {
 					oStmtT.executeBatch();
 					oStmtT.clearBatch();
+					oStmtT.clearParameters();
 					oStmtCommit.execute(strCommit); // for oracle
 //					oConnT.commit();
 				}
@@ -593,6 +641,7 @@ class MigWorker extends Thread {
 			if((_nResultCount % _nBatchSize) != 0) {
 				oStmtT.executeBatch();
 				oStmtT.clearBatch();
+				oStmtT.clearParameters();
 				oStmtCommit.execute(strCommit); // for oracle
 //				oConnT.commit();
 			}
@@ -612,9 +661,10 @@ class MigWorker extends Thread {
 			_sErrorMessage = ex.getMessage();
 
 			System.err.println(String.format("RUN(%d)에서 오류 발생 ######################", _nThreadNumber));
+			System.out.println("SRC SQL: " + strSqlS);
 			try {
 				System.err.print("컬럼(1)값 : ");
-				if(oRs != null) for (int i=0; i<_nBatchSize; i++) System.err.print(String.format("%s, ", sKeyValues[i]));
+				if(oRs != null) for (int i=0; i< sKeyValues.length; i++) System.err.format("%s, ", sKeyValues[i]);
 				System.err.println("");				
 			} catch (Exception e1) {
 				e1.printStackTrace();
@@ -625,18 +675,59 @@ class MigWorker extends Thread {
 				if(oStmtS != null) if(!oStmtS.isClosed()) oStmtS.close();
 				if(oStmtT != null) if(!oStmtT.isClosed()) oStmtT.close();
 				if(oStmtCommit != null) if(!oStmtCommit.isClosed()) oStmtCommit.close();
-				if(oConnS != null) if(!oConnS.isClosed()) oConnS.close();
-				if(oConnT != null) if(!oConnT.isClosed()) oConnT.close();
+//				if(oConnS != null) if(!oConnS.isClosed()) oConnS.close();
+//				if(oConnT != null) if(!oConnT.isClosed()) oConnT.close();
 			}
 			catch (Exception e2) {
 				e2.printStackTrace();
 			}
 		}
-		
-		//oConMgr.closeAll();
-		
 	}
 	
+	/**
+	 * skip 설정값이 all일 경우 생략, sub일 경우 MigInfo의 전체 소스 건수와 동일하게 설정
+	 * @return
+	 */
+	private long getTargetCount() {
+		if(_migInfo._countOption == MigInfo.COUNT_OPTION.SKIP) {
+			_nTargetCount = -1;
+		}
+		else {
+			
+			if(_oConnSource == null) dbConnect();
+			
+			Connection oConn = _oConnSource;
+			try (	
+					//Connection oConn = (new DBConnection(_migInfo._sSourceDB)).dbConnect();
+					Statement oStmt = oConn.createStatement();
+			)
+			{
+				String sSQLCount = String.format("%s\r\n from %s\r\n %s\r\n %s"
+						, _migInfo._sSelectCount, _migInfo._sSourceTable, _migInfo._sWhereCondition, _migInfo._sSplitCondition);
+				sSQLCount = sSQLCount.replace("@TOTAL", String.valueOf(_migInfo._nThreadCount)).replace("@PART", String.valueOf(_nThreadNumber));
+				// get Source table row count
+//				System.out.println("getTargetCount() : SQL: " + sSQLCount);
+				ResultSet oRs = oStmt.executeQuery(sSQLCount);
+				if(oRs.next()) {
+					_nTargetCount = oRs.getLong(1);
+				}
+				else {
+					System.out.println("getTargetCount() : ERROR : sql no resultset");
+				}
+				oStmt.close();
+				oRs.close();
+			}
+			catch (Exception ex) {
+				ex.printStackTrace();
+				System.exit(1);
+			}
+			
+			if(_migInfo._countOption == MigInfo.COUNT_OPTION.SUB) {
+				_migInfo.addSourceCount(_nTargetCount);
+			}
+		}
+		return _nTargetCount;
+	}
 	
 	private void logStart() {
 		//System.out.println(String.format("logStart(%d) .....", _nThreadNumber));
@@ -644,18 +735,12 @@ class MigWorker extends Thread {
 		String sSQLId = "select sq_mig_log.nextval from dual";
 		String sSQLP = "insert into tb_mig_log(log_id, log_group, job_id, job_name, target_table, source_table, source_cnt, target_cnt, status, start_time, log_time) "
 				     + " values(?,?,?,?,?,?,?,?,'RUNNING', sysdate, sysdate)";
-		String sSQLCount = String.format("%s from %s %s %s", _migInfo._sSelectCount, _migInfo._sSourceTable, _migInfo._sWhereCondition, _migInfo._sSplitCondition);
-		sSQLCount = sSQLCount.replace("@TOTAL", String.valueOf(_migInfo._nThreadCount)).replace("@PART", String.valueOf(_nThreadNumber));
-
 		Connection oConnL = null;
-		Connection oConnS = null;
 		Statement  oStmt = null;
 		PreparedStatement oPStmt = null;
 		
 		try {
 			oConnL = (new DBConnection(_migInfo._sLogDB)).dbConnect();
-			oConnS = (new DBConnection(_migInfo._sSourceDB)).dbConnect();
-			
 			oStmt = oConnL.createStatement();
 			ResultSet oRs = oStmt.executeQuery(sSQLId);
 			
@@ -667,23 +752,8 @@ class MigWorker extends Thread {
 			}
 			oRs.close();
 			oStmt.close();
-			
-			// get Source table row count
-			if(_migInfo._sSkipCount.equalsIgnoreCase("all")||_migInfo._sSkipCount.equalsIgnoreCase("one")) {
-				_nTargetCount = -1;
-			}
-			else {
-				System.out.println("SRC COUNT : " + sSQLCount);
-				oStmt = oConnS.createStatement();
-				oRs = oStmt.executeQuery(sSQLCount);
-			
-				if(oRs.next()) {
-					_nTargetCount = oRs.getLong(1);
-				}
-				else {
-					System.out.println("logStart()....SourceCount ERROR");
-				}
-			}
+
+			getTargetCount();
 			
 			oPStmt = oConnL.prepareStatement(sSQLP);
 			oPStmt.setLong(1,  _nLogId);
@@ -708,8 +778,6 @@ class MigWorker extends Thread {
 				if (oStmt != null) if (! oStmt.isClosed()) oStmt.close(); 
 				if (oPStmt != null) if (! oPStmt.isClosed()) oPStmt.close(); 
 				if (oConnL != null) if (! oConnL.isClosed()) oConnL.close(); 
-				if (oConnS != null) if (! oConnS.isClosed()) oConnS.close(); 
-				
 			}
 			catch (Exception e) {
 				e.printStackTrace();
@@ -722,6 +790,7 @@ class MigWorker extends Thread {
 				+ ", res_code=?, result_cnt = ? "
 				+ ", error_code=?, error_msg=? "
 				+ ", end_time=sysdate, log_time=sysdate "
+				+ ", source_cnt = ? " // count option sub인 경우 source_cnt를 최종 것으로 다시 반영해야함
 				+ " where log_id=? ";
 		Connection oConnL = null;
 		PreparedStatement oPStmt = null;
@@ -746,7 +815,8 @@ class MigWorker extends Thread {
 			oPStmt.setLong  (2, _nResultCount);
 			oPStmt.setString(3, _sErrorCode);
 			oPStmt.setString(4, _sErrorMessage);
-			oPStmt.setLong  (5, _nLogId);
+			oPStmt.setLong  (5, _migInfo._nSourceCount);
+			oPStmt.setLong  (6, _nLogId);
 			
 			oPStmt.executeUpdate();
 
