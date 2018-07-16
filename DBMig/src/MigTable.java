@@ -54,7 +54,7 @@ public class MigTable  {
 		if(args.length < 1) {
 			args = new String[2];
 			args[0] = "xmls/analstore.dbo.tbl_cate_goods.xml";
-			args[1] = "migDev";
+			args[1] = "debug";
 		}
 		migWork(args);
 		
@@ -102,7 +102,7 @@ public class MigTable  {
 						nRowsCurrent += migWorker[i].getResultCount();
 					}
 					System.out.format("Running.%s[%d]:[%,d] %,d Rows(%.1f%%), +%,d,  %,.1f rows/sec (%02d:%02d:%02d)\n"
-							        , migInfo._insertType.name().substring(0, 1)
+							        , migInfo._insertType.name().substring(0, 2)
 									, migInfo.getRunCount() 
 									, migInfo._nSourceCount
 									, nRowsCurrent
@@ -170,7 +170,7 @@ class MigInfo {
 	// all : 원본 건수를 전체 건수와 개별 작업단위의 건수를 모두 쿼리함 (기본)
 	// sub : 개별 작업에서만 건수를 쿼리함 : 전체 건수는 개별 작업의 건수를 합산
 	// skip : 건수를 조회하지 않음 : 건수검증 별도 시행
-	public enum INSERT_TYPE { INSERT, BULKMS};
+	public enum INSERT_TYPE { INSERT, BATCH, BULK}; // insert==batch, bulk(ms-sql bulkcopy)
 	public String _sLogGroup = "null";
 	public String _sJobId;
 	public String _sJobName;
@@ -421,7 +421,7 @@ class MigWorker extends Thread {
 		dbConnect();
 		logStart();
 		
-		if(_migInfo._insertType == MigInfo.INSERT_TYPE.BULKMS) {
+		if(_migInfo._insertType == MigInfo.INSERT_TYPE.BULK) {
 			bulkInsert();
 		}
 		else {
@@ -488,7 +488,7 @@ class MigWorker extends Thread {
 			ResultSetMetaData oRsMeta = oRs.getMetaData();
 			for(int i=1; i <= oRsMeta.getColumnCount(); i++) {
 //				bulkCopy.addColumnMapping(oRsMeta.getColumnName(i), oRsMeta.getColumnName(i).toLowerCase());
-				bulkCopy.addColumnMapping(i, oRsMeta.getColumnName(i).toLowerCase());
+				bulkCopy.addColumnMapping(i, oRsMeta.getColumnName(i));
 //				System.out.println("col mapping : " + oRsMeta.getColumnName(i) + " -> " + oRsMeta.getColumnName(i).toLowerCase());
 			}
 			
@@ -503,13 +503,15 @@ class MigWorker extends Thread {
 				_sResultCode = "ERROR";
 				_sErrorCode = ex.getClass().getSimpleName();
 				_sErrorMessage =ex.getMessage();
-				System.err.println("######################################################");
+				System.err.format("RUN(%d)에서 오류 발생 ######################", _nThreadNumber);
+				System.err.println(bulkRowSet.toString());
 				ex.printStackTrace();
 			}
 			
 			_nResultCount = bulkRowSet.getRowCount(); //_nTargetCount;
 			dElapsedSec =  (System.currentTimeMillis() - nTimeStart) /1000.0;
-			System.out.println( String.format("# COMPLETE(%d): %d Rows, Sec: %.0f,  %.1f rows/sec", _nThreadNumber, _nResultCount, dElapsedSec, _nResultCount / dElapsedSec));
+			System.out.format("# COMPLETE(%d): %d Rows, Sec: %.0f,  %.1f rows/sec\n"
+					, _nThreadNumber, _nResultCount, dElapsedSec, _nResultCount / dElapsedSec);
 			
 		}
 		catch (Exception ex) {
@@ -647,8 +649,8 @@ class MigWorker extends Thread {
 			}
 
 			dElapsedSec =  (System.currentTimeMillis() - nTimeStart) /1000.0;
-			System.out.println( String.format("# COMPLETE(%d) : total %d Rows, Sec: %.0f,  %.1f rows/sec"
-					, _nThreadNumber, _nResultCount, dElapsedSec, _nResultCount / dElapsedSec));
+			System.out.format("# COMPLETE(%d) : total %d Rows, Sec: %.0f,  %.1f rows/sec\n"
+					, _nThreadNumber, _nResultCount, dElapsedSec, _nResultCount / dElapsedSec);
 //			_nTotalRows = _nTotalRows + _nRows;
 			_migInfo.addTotalRows(_nResultCount);
 			oStmtS.close();
@@ -660,7 +662,7 @@ class MigWorker extends Thread {
 			_sErrorCode = ex.getClass().getSimpleName();
 			_sErrorMessage = ex.getMessage();
 
-			System.err.println(String.format("RUN(%d)에서 오류 발생 ######################", _nThreadNumber));
+			System.err.format("RUN(%d)에서 오류 발생 ######################", _nThreadNumber);
 			System.out.println("SRC SQL: " + strSqlS);
 			try {
 				System.err.print("컬럼(1)값 : ");
@@ -712,13 +714,14 @@ class MigWorker extends Thread {
 					_nTargetCount = oRs.getLong(1);
 				}
 				else {
-					System.out.println("getTargetCount() : ERROR : sql no resultset");
+					System.out.format("RUN(%d) ERROR at getTargetCount() : count sql no result\n", _nThreadNumber);
 				}
 				oStmt.close();
 				oRs.close();
 			}
 			catch (Exception ex) {
 				ex.printStackTrace();
+				dbClose();
 				System.exit(1);
 			}
 			
@@ -748,7 +751,12 @@ class MigWorker extends Thread {
 				_nLogId = oRs.getLong(1);
 			}
 			else {
-				System.out.println("logStart() ..... Error: getLogID");
+				System.out.format("RUN(%d)의  logStart()에서 오류 발생 : LogID 생성 오류", _nThreadNumber);
+				oRs.close();
+				oStmt.close();
+				oConnL.close();
+				this.dbClose();
+				System.exit(1);
 			}
 			oRs.close();
 			oStmt.close();

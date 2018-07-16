@@ -4,7 +4,11 @@ import java.io.File;
 import java.util.Hashtable;
 //import java.util.Vector;
 
-
+/**
+ * 로그를 파일에 기록할 때 여러 쓰레드에서 공동으로 사용할 수 있도록 LogFile 인스턴스를 관리함
+ * @author sonan
+ *
+ */
 public class LogFileManager {
 	static private LogFileManager m_instance;
 	private Hashtable<String, LogFile> m_htLogFiles = new Hashtable<String, LogFile>();

@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- SAMPLE MIGRATION CONFIG type : bulk(mssql only)/batch-->
-<migration jobid="AN01" jobname="ANALSTORE.MIG_TBL_PRICELIST" type="bulk" threads="15" batchsize="200" fetchsize="400" reportsec="10">
+<migration jobid="AN01" jobname="ANALSTORE.dbo.MIG_TBL_PRICELIST" 
+           type="bulk" threads="15" batchsize="200" fetchsize="400" 
+           reportsec="10">
     <target>
         <dbname type="mssql">ANALSTORE_DB</dbname>
         <table>MIG_TBL_PRICELIST</table>

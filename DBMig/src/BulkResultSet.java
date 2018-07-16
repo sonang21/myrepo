@@ -39,7 +39,7 @@ public class BulkResultSet implements ISQLServerBulkRecord {
 
 	int _columnCount = 0;
     int _counter = 0;
-    long _rowCount = 1;
+    long _rowCount = 0;
     Map<Integer, ColumnMetadata> _columnMetadata;
     ResultSet _oResultSet;
 //    Object[] _rowData;
@@ -66,7 +66,11 @@ public class BulkResultSet implements ISQLServerBulkRecord {
             _columnMetadata.put(i, new ColumnMetadata(name, type, precision, scale, typeName));
         }
         
-        System.out.println("BulkResultSet() : meta => " + _columnMetadata.toString());
+//        System.out.println("BulkResultSet() : meta => " + _columnMetadata.toString());
+    }
+    @Override
+    public String toString() {
+    	return _columnMetadata.toString();
     }
     
 	@Override
