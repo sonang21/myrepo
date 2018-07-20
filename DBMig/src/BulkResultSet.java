@@ -13,27 +13,30 @@ public class BulkResultSet implements ISQLServerBulkRecord {
 	private class ColumnMetadata {
         String columnName;
         int columnType;
+        int columnTypeOrigin;
         int precision;
         int scale;
 
         String columnTypeName;
         
         ColumnMetadata(String name,
-                int type,
+        		int originType,
+        		int newType,
                 int precision,
                 int scale,
                 String typeName
         ) {
             columnName = name;
-            columnType = type;
+            columnTypeOrigin = originType;
+            columnType = newType;
             this.precision = precision;
             this.scale = scale;
             columnTypeName = typeName; 
         }
         @Override
         public String toString() {
-        	return String.format("[name=%s, type=%d(%s), precision=%d, scale=%d]"
-        			           , columnName, columnType, columnTypeName, precision, scale);
+        	return String.format("[name=%s, type=%s(%d=>%d), precision=%d, scale=%d]\n"
+        			           , columnName, columnTypeName, columnTypeOrigin, columnType, precision, scale);
         }
     }
 
@@ -44,7 +47,7 @@ public class BulkResultSet implements ISQLServerBulkRecord {
     ResultSet _oResultSet;
 //    Object[] _rowData;
     
-    BulkResultSet(ResultSet rs) throws SQLException {
+    BulkResultSet(ResultSet rs, boolean fromOracle) throws SQLException {
         _columnMetadata = new HashMap<Integer, ColumnMetadata>();
         _oResultSet = rs;
         ResultSetMetaData meta = _oResultSet.getMetaData();
@@ -54,16 +57,27 @@ public class BulkResultSet implements ISQLServerBulkRecord {
         // add metadata
         for (int i = 1; i <= _columnCount; i++) {
         	String name = meta.getColumnName(i);
-        	int type = meta.getColumnType(i);
+        	int originType = meta.getColumnType(i);
+        	int newType = originType;
         	String typeName = meta.getColumnTypeName(i);
             int precision = meta.getPrecision(i);
             int scale = meta.getScale(i);
-            switch (type) {
-	        	case 1  : type = java.sql.Types.NCHAR; break;//oracle char
-	        	case 12 : type = java.sql.Types.NVARCHAR; break;//oracle varchar2
-            	default : break;  //nothing
-            }
-            _columnMetadata.put(i, new ColumnMetadata(name, type, precision, scale, typeName));
+            
+            if(fromOracle) {
+	            switch (originType) {
+		        	case 1  : newType = java.sql.Types.NCHAR;    break; //oracle char
+		        	case 12 : newType = java.sql.Types.NVARCHAR; break; //oracle varchar2
+	            	default : break;  //nothing
+	            }
+            } 
+//            else {
+//	            switch (originType) {
+//		        	case 93 : newType = java.sql.Types.TIMESTAMP;  break; //mssql smalldatetime 2008에서 오류
+//	            	default : break;  //nothing
+//	            }
+//            }
+            
+            _columnMetadata.put(i, new ColumnMetadata(name, originType, newType, precision, scale, typeName));
         }
         
 //        System.out.println("BulkResultSet() : meta => " + _columnMetadata.toString());
@@ -100,6 +114,7 @@ public class BulkResultSet implements ISQLServerBulkRecord {
 	@Override
 	public Object[] getRowData() throws SQLServerException {
 		// TODO Auto-generated method stub
+//		System.out.println("S.....................................................................");
 		Object[] rowData = new Object[_columnCount];
 		try {
 			for (int i = 0; i < _columnCount; i++) {
@@ -107,10 +122,12 @@ public class BulkResultSet implements ISQLServerBulkRecord {
 			}
 		}
 		catch (SQLException ex) {
+			rowData = null;			
 			System.err.println("BulkResultSet.getRowData() : \n");
 			ex.printStackTrace();
-			rowData = null;			
+			throw new SQLServerException(ex.getMessage(), ex.getSQLState(), ex.getErrorCode(),ex.getCause());
 		}
+//		System.out.println("E....................................................................." + rowData[0].toString());
 		return rowData;
 	}
 
@@ -134,10 +151,12 @@ public class BulkResultSet implements ISQLServerBulkRecord {
 			if( _oResultSet.next()) {
 				result = true;
 				_rowCount ++;
-//				System.out.println(String.format("============> %d : %d [%s]", _rowCount, _oResultSet.getLong(1), _oResultSet.getString(4)));
+//				System.out.format("============> %d : [%s]\n", _rowCount, _oResultSet.getString(1));
 			};
 		}
 		catch (SQLException ex) {
+			System.err.println("BulkResultSet.next()======================================");
+			ex.printStackTrace();
 			result = false;
 		}
 		return result;

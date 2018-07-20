@@ -3,6 +3,7 @@
 import com.microsoft.sqlserver.jdbc.SQLServerBulkCopy;
 import com.microsoft.sqlserver.jdbc.SQLServerBulkCopyOptions;
 //import com.microsoft.sqlserver.jdbc.*;
+import com.microsoft.sqlserver.jdbc.SQLServerDataSource;
 
 //import dbm.dbworks.StandAloneTest;
 
@@ -15,6 +16,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.Statement;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Properties;
 
 //import dbm.db.dbpool.DBConnectionManager;
@@ -37,10 +40,11 @@ public class MSSQLBulkCopy extends Thread {
 //	private static int _nTotalCount=0;
 	private static int _nThreadCount=0;
 	private static int _nRunCount = 0;
+	private static int _nWorkingCount = 0;
 	private int _nThreadNumber = 0;
 
-	private static int _nBatchSize = 200; //5000;
-	private static int _nFetchSize = 200; //5000;
+	private static int _nBatchSize = 125; //5000;
+	private static int _nFetchSize = 250; //5000;
 	private static long _nTotalRows = 0; //500000;
 	private long        _nRows = 0;
 	
@@ -56,7 +60,9 @@ public class MSSQLBulkCopy extends Thread {
 		int nThreadNum = -1;
 		
 		//테스트 코드 강제 실행을 위한 세팅 
-		args = new String[1]; args[0] = "all";
+		if(args.length < 1) {
+			args = new String[1]; args[0] = "4";
+		}
 		
 		
 		if (args.length > 0) {
@@ -99,18 +105,30 @@ public class MSSQLBulkCopy extends Thread {
 		long nTimeCurrent = nTimeStart;
 		long nTimeBefore = nTimeStart;
 		double dElapsedSec = 0.0;
+		double dTotalSec = 0.0;
 		long nRowsCurrent = 0;
 		long nRowsBefore = 0;
+		//SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+		SimpleDateFormat df = new SimpleDateFormat("HH:mm:ss");
+		
 		while (getRunCount() > 0) {
 			Thread.sleep(5000);
 			nTimeCurrent = System.currentTimeMillis();
 			dElapsedSec =  (nTimeCurrent - nTimeBefore) /1000.0;
+			dTotalSec = (nTimeCurrent - nTimeStart) / 1000.0;
 			nRowsCurrent = 0;
 			for(int i=0; i < sample.length; i++) {
 				nRowsCurrent += sample[i].getRowCount();
 			}
-			System.out.println( String.format("RUNING[%d] : Total %d Rows, %d Rows,  Sec: %.0f,  %.1f rows/sec"
-					, getRunCount(), nRowsCurrent, nRowsCurrent-nRowsBefore, dElapsedSec,  (nRowsCurrent-nRowsBefore) / dElapsedSec));
+			System.out.format("[%02d:%02d:%02d](%d/%d):Total %,d Rows, %,d/%.0fs, %.1f /tsec, %.1f /sec\n"
+					//, df.format(new Date(nTimeCurrent))
+					, (int)(dTotalSec / 3600), (int)(dTotalSec % 3600) / 60, (int)(dTotalSec % 60)
+					, getWorkingCount(), getRunCount()
+					, nRowsCurrent, nRowsCurrent-nRowsBefore, dElapsedSec
+					, nRowsCurrent / dTotalSec
+					, (nRowsCurrent-nRowsBefore) / dElapsedSec
+					)
+			;
 			nTimeBefore = nTimeCurrent;
 			nRowsBefore = nRowsCurrent;
 		}
@@ -121,7 +139,11 @@ public class MSSQLBulkCopy extends Thread {
 //		}
 //		
 		dElapsedSec =  (System.currentTimeMillis() - nTimeStart) /1000.0;
-		System.out.println( String.format("## END : total %d Rows, Sec: %.0f,  %.1f rows/sec", _nTotalRows, dElapsedSec, _nTotalRows / dElapsedSec));
+		System.out.format("## END : total %d Rows, Sec: %.0f(%02d:%02d:%02d),  %.1f rows/sec \n"
+				, _nTotalRows, dElapsedSec
+				, (int) dElapsedSec / 3600, (int) (dElapsedSec %3600) / 60, (int) (dElapsedSec % 60)
+				, _nTotalRows / dElapsedSec
+				);
 		
 		
 	}
@@ -146,16 +168,18 @@ public class MSSQLBulkCopy extends Thread {
 		_sTargetTable = sTable;
 	}
 	public void run() {
-		_nRunCount ++;
+		addRunCount(1);
 //		bulkCopy();
 //		batchInsert();
 		batchUpdate();
-		_nRunCount --;
+		addRunCount(-1);
+		addWorkingCount(-1);
 	}
 	
 	public long getRowCount() { return _nRows; }
 	
 	public static int getRunCount() { return _nRunCount; }
+	public static int getWorkingCount() { return _nWorkingCount; }
 	
 	
 //	@SuppressWarnings("unused")
@@ -507,13 +531,14 @@ public class MSSQLBulkCopy extends Thread {
 		Connection oConnT = null;
 		//===============================================================
 		// set global variable for test only
-		_sSourceTable = "ELOC2001.dbo.tmp_pricelist";
+		_sSourceTable = "ELOC2001.dbo.pricelist";
 		_sTargetTable = "ELOC2001.dbo.mig_pricelist";
 		_sSourceDB = "MP_DB";
 		_sTargetDB = "MP_DB";
 		//===============================================================
+		_sSourceDB = "ANAL_DB"; _sSourceTable = "ANALSTORE.dbo.perf_pricelist";
 		
-		String strSqlS = String.format( "select /* top 100000 */ \r\n" +
+		String strSqlS = String.format( "select --top 1000000  \r\n" +
 				"  pl_modelno\r\n" + 
 				", pl_vcode\r\n" + 
 				", pl_category\r\n" + 
@@ -587,9 +612,26 @@ public class MSSQLBulkCopy extends Thread {
 			Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
 			oConnS = DriverManager.getConnection(sConnS);
 			oConnT = DriverManager.getConnection(sConnT);
+
+////			 for test packetsize
+//			SQLServerDataSource ds1 = new SQLServerDataSource();
+//			ds1.setServerName("100.100.100.195");
+//			ds1.setDatabaseName("ELOC2001");
+//			ds1.setUser("migadm");
+//			ds1.setPassword("mig1020");
+//			ds1.setPacketSize(8192);
+//			oConnS = ds1.getConnection();
 			
+//			SQLServerDataSource ds2 = new SQLServerDataSource();
+//			ds2.setServerName("100.100.100.195");
+//			ds2.setDatabaseName("ELOC2001");
+//			ds2.setUser("migadm");
+//			ds2.setPassword("mig1020");
+//			ds2.setPacketSize(12288);
+//			oConnT = ds2.getConnection();
+						
 			oStmtS = oConnS.createStatement(ResultSet.TYPE_FORWARD_ONLY , ResultSet.CONCUR_READ_ONLY);
-			oStmtS.setFetchSize(_nBatchSize);
+			oStmtS.setFetchSize(_nFetchSize);
 			
 			oRs = oStmtS.executeQuery(strSqlS);
 			ResultSetMetaData oRsMeta = oRs.getMetaData(); 
@@ -608,7 +650,8 @@ public class MSSQLBulkCopy extends Thread {
 			oStmtT = oConnT.prepareStatement(strSqlT1);
 			oStmtCommit = oConnT.createStatement();
 			
-//			System.out.println("sql:" + strSqlT1);
+			System.out.format("Thread(%d) fetch start ...\n", _nThreadNumber);
+			addWorkingCount(1);
 			
 			while(oRs.next()) {
 				_nRows ++;
@@ -830,6 +873,14 @@ public class MSSQLBulkCopy extends Thread {
 
 	}
 
+	public synchronized void addRunCount(int i) {
+		_nRunCount += i;
+	}
+	
+	public synchronized void addWorkingCount(int i) {
+		_nWorkingCount += i;
+	}
+	
 	public synchronized void addTotalRows(long nRows)
 	{
 		_nTotalRows = _nTotalRows + nRows;

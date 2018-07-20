@@ -981,7 +981,7 @@ public class ObjectList {
 			menuItems[6] = new MenuItem("소스 내려받기(전체)");
 			menuItems[7] = new MenuItem("소스 내려받기");
 			menuItems[8] = new MenuItem("결과삭제");
-			menuItems[9] = new MenuItem("파일생성");
+			menuItems[9] = new MenuItem("스크립트생성");
 			
 			//소스 비교 보기
 			menuItems[0].setOnAction(
@@ -1072,7 +1072,7 @@ public class ObjectList {
 					}
 				);
 			
-			//결과 삭제
+			//스크립트 파일 생성
 			menuItems[9].setOnAction(
 					new EventHandler<ActionEvent>() {
 						@Override

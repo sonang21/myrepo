@@ -55,7 +55,10 @@ public class DBObjectWork {
 				if(isBatch) {
 					SimpleDateFormat fmt = new SimpleDateFormat("yyyyMMdd_HHmmss");
 					sResult[1] = String.format("/*** [%s] %s.%s  : modified %s ***/\r\n"
-							, sObjectType, sOwner, sObjectName, fmt.format(oRs.getDate(5)));
+							, sObjectType, sOwner, sObjectName
+							//, fmt.format(oRs.getDate(5))
+							, fmt.format(oRs.getTimestamp(5))
+							);
 					sResult[1] = sResult[1] + oRs.getString(6).replaceFirst("\nALTER TRIGGER ", "\n/\r\nALTER TRIGGER " );
 					sResult[1] = sResult[1] + "\r\n/\r\n----------------------------------------------------------------------------------\r\n\r\n";
 	//				SimpleDateFormat fmt = new SimpleDateFormat("yyyyMMdd_HHmmss");
@@ -117,7 +120,9 @@ public class DBObjectWork {
 					SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 //					System.out.println(fmt.format(oRs.getTimestamp(8))+ " , "+ fmt.format(oRs.getTimestamp(9)));
 					sResult[1] = String.format("/*** [%s] %s.%s : modified %s ***/\r\n\r\nUSE [%s]\r\nGO\r\n"
-							                  , sObjectType, sOwner, sObjectName, fmt.format(oRs.getTimestamp(9)), oRs.getString(1));
+							                  , sObjectType, sOwner, sObjectName
+							                  , fmt.format(oRs.getTimestamp(9).getTime())
+							                  , oRs.getString(1));
 					sResult[1] = sResult[1] + String.format("IF OBJECT_ID('%s.%s','%s') IS NOT NULL \r\n    DROP %s %s.%s; \r\nGO\r\n"
 							                   , sOwner, sObjectName, oRs.getString(6)
 							                   , sObjectType, sOwner, sObjectName

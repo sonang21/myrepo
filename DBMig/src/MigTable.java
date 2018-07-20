@@ -53,7 +53,7 @@ public class MigTable  {
 	public static void main(String[] args) {
 		if(args.length < 1) {
 			args = new String[2];
-			args[0] = "xmls/analstore.dbo.tbl_cate_goods.xml";
+			args[0] = "xmls/test_perf_pricelist.xml";
 			args[1] = "debug";
 		}
 		migWork(args);
@@ -92,7 +92,7 @@ public class MigTable  {
 			// 보고 간격(초)가 0 이상인 경우 보고간격 주기로 현황 출력
 			//if(!migInfo._sInsertType.equalsIgnoreCase("bulk") && migInfo._nReportSec > 0) {
 			if(migInfo._nReportSec > 0) {
-					while (migInfo.getRunCount() > 0) {
+				while (migInfo.getRunCount() > 0) {
 					Thread.sleep(migInfo._nReportSec * 1000);
 					nTimeCurrent = System.currentTimeMillis();
 					dElapsedSec =  (nTimeCurrent - nTimeBefore) /1000.0;
@@ -171,6 +171,8 @@ class MigInfo {
 	// sub : 개별 작업에서만 건수를 쿼리함 : 전체 건수는 개별 작업의 건수를 합산
 	// skip : 건수를 조회하지 않음 : 건수검증 별도 시행
 	public enum INSERT_TYPE { INSERT, BATCH, BULK}; // insert==batch, bulk(ms-sql bulkcopy)
+	public enum DB_TYPE { ORACLE, MSSQL }
+	
 	public String _sLogGroup = "null";
 	public String _sJobId;
 	public String _sJobName;
@@ -179,7 +181,10 @@ class MigInfo {
 
 	public String _sSourceDB;
 	public String _sTargetDB;
-	public String _sTargetDBType;
+	//public String _sTargetDBType;
+	public DB_TYPE _targetDBType;
+	public DB_TYPE _sourceDBType;
+	
 	public String _sSourceTable;
 	public String _sTargetTable;
 	public String _sLogDB;
@@ -224,12 +229,12 @@ class MigInfo {
 	
 	// 쓰레드의 생성 갯수를 증가시키고, 증가된 쓰레드 수를 반환함
 	public synchronized int addRunCount() {
-		_nRunCount += 1;
+		_nRunCount ++;
 		return _nRunCount;
 	}
 
 	public synchronized int reduceRunCount() {
-		_nRunCount -= 1;
+		_nRunCount --;
 		return _nRunCount;
 	}
 	
@@ -242,18 +247,18 @@ class MigInfo {
 		String sResult = String.format("\n\n============ MigInfo(%s) ============ \r\n" +
 				"Insert Type  : %s, Threads = %d \r\n" +
 				"JobId=%s, JobName=%s \r\n" +
-				"Target DB    : %s \r\n" +
+				"Target DB    : %s (%s) \r\n" +
 				"Target Table : %s \r\n" +
-				"Source DB    : %s \r\n" +
+				"Source DB    : %s (%s) \r\n" +
 				"Source Table : %s \r\n" +
 				"== Select ==: %s \r\n" +
 				"== Split   ==: %s \r\n=====================================" 
 				, this.getClass().getSimpleName()
 				, _insertType.name(), _nThreadCount
 				, _sJobId, _sJobName
-				, _sTargetDB
+				, _sTargetDB, _targetDBType.toString()
 				, _sTargetTable
-				, _sSourceDB
+				, _sSourceDB, _sourceDBType.toString()
 				, _sSourceTable
 				, _sSelectList.trim()
 				, _sSplitCondition.trim());
@@ -291,10 +296,27 @@ class MigInfo {
 		    
 		    _sTargetDB =    ((Element)xpath.evaluate("/migration/target/dbname", doc, XPathConstants.NODE)).getTextContent().trim();
 		    _sTargetTable = ((Element)xpath.evaluate("/migration/target/table", doc, XPathConstants.NODE)).getTextContent().trim();
-		    _sTargetDBType = ((Element)xpath.evaluate("/migration/target/dbname", doc, XPathConstants.NODE)).getAttribute("type").trim();
+		    String sDBType="";
+		    try {
+		    	sDBType = ((Element)xpath.evaluate("/migration/target/dbname", doc, XPathConstants.NODE)).getAttribute("type").trim();
+		    	_targetDBType = DB_TYPE.valueOf(sDBType.toUpperCase());
+		    }
+		    catch (Exception ex ) {
+		    	System.err.format("Target DB_TYPE %s is invalid ... using default : MSSQL\n", sDBType);
+		    	_targetDBType = DB_TYPE.MSSQL;
+		    }
 
 		    _sSourceDB =    ((Element)xpath.evaluate("/migration/source/dbname", doc, XPathConstants.NODE)).getTextContent().trim();
 		    _sSourceTable = ((Element)xpath.evaluate("/migration/source/table", doc, XPathConstants.NODE)).getTextContent().trim();
+		    try {
+		    	sDBType = ((Element)xpath.evaluate("/migration/source/dbname", doc, XPathConstants.NODE)).getAttribute("type").trim();
+		    	_sourceDBType = DB_TYPE.valueOf(sDBType.toUpperCase());
+		    }
+		    catch (Exception ex ) {
+		    	System.err.format("Source DB_TYPE %s is invalid ... using default : MSSQL\n", sDBType);
+		    	_sourceDBType = DB_TYPE.MSSQL;
+		    }
+
 		    _sLogDB =       ((Element)xpath.evaluate("/migration/logdb", doc, XPathConstants.NODE)).getTextContent().trim();
 		    
 		    _sSelectCount    = ((Element)xpath.evaluate("/migration/count", doc, XPathConstants.NODE)).getTextContent().trim();
@@ -337,10 +359,14 @@ class MigInfo {
 	}
 	
 	private long getSourceCount() {
-		long nSourceCount = -1;
-		if (_countOption == COUNT_OPTION.SKIP || _countOption == COUNT_OPTION.SUB) {
-			return nSourceCount;
+		if (_countOption == COUNT_OPTION.SKIP ) {
+			return -1;
 		}
+		else if(_countOption == COUNT_OPTION.SUB) {
+			return 0;
+		}
+		
+		long nSourceCount = -1;
 		String sSqlCount = String.format("%s\r\n from %s\r\n %s", _sSelectCount, _sSourceTable , _sWhereCondition);
 //		System.out.println("getSourceCount() : sql =  " + sSqlCount);
 		try (
@@ -427,11 +453,10 @@ class MigWorker extends Thread {
 		else {
 			batchInsert();
 		}
-		
+		_migInfo.reduceRunCount();
+
 		logEnd();
 		dbClose();
-		
-		_migInfo.reduceRunCount();
 		
 		System.out.println(String.format("MigWorker(%d) ..... run end", _nThreadNumber));
 	}
@@ -465,7 +490,7 @@ class MigWorker extends Thread {
 			nSpotTimeBefore = System.currentTimeMillis();
 			
 			ResultSet oRs = oStmtS.executeQuery(strSqlS);
-			bulkRowSet = new BulkResultSet(oRs);
+			bulkRowSet = new BulkResultSet(oRs, _migInfo._sourceDBType == MigInfo.DB_TYPE.ORACLE);
 			
 			dElapsedSec =  (System.currentTimeMillis() - nSpotTimeBefore) /1000.0;
 			System.out.println(String.format("Fetch Start (%d) .... %.1f sec", _nThreadNumber, dElapsedSec));
@@ -503,15 +528,17 @@ class MigWorker extends Thread {
 				_sResultCode = "ERROR";
 				_sErrorCode = ex.getClass().getSimpleName();
 				_sErrorMessage =ex.getMessage();
-				System.err.format("RUN(%d)에서 오류 발생 ######################", _nThreadNumber);
+				System.err.format("RUN(%d)에서 오류 발생 ######################\n", _nThreadNumber);
 				System.err.println(bulkRowSet.toString());
 				ex.printStackTrace();
 			}
 			
 			_nResultCount = bulkRowSet.getRowCount(); //_nTargetCount;
 			dElapsedSec =  (System.currentTimeMillis() - nTimeStart) /1000.0;
-			System.out.format("# COMPLETE(%d): %d Rows, Sec: %.0f,  %.1f rows/sec\n"
-					, _nThreadNumber, _nResultCount, dElapsedSec, _nResultCount / dElapsedSec);
+			System.out.format("# COMPLETE(%d): %d, %d Rows(%d), Sec: %.0f,  %.1f rows/sec\n"
+					, _nThreadNumber
+					, _nTargetCount, _nResultCount, (_nTargetCount - _nResultCount)
+					, dElapsedSec, _nResultCount / dElapsedSec);
 			
 		}
 		catch (Exception ex) {
@@ -549,7 +576,7 @@ class MigWorker extends Thread {
 		
 		String strCommit = "commit write batch nowait"; //for oracle 
 		
-		if(_migInfo._sTargetDBType.equalsIgnoreCase("mssql")) {
+		if(_migInfo._targetDBType == MigInfo.DB_TYPE.MSSQL) {
 			strCommit ="commit with (delayed_durability=on)"; // for mssql
 		}
 		
@@ -649,8 +676,10 @@ class MigWorker extends Thread {
 			}
 
 			dElapsedSec =  (System.currentTimeMillis() - nTimeStart) /1000.0;
-			System.out.format("# COMPLETE(%d) : total %d Rows, Sec: %.0f,  %.1f rows/sec\n"
-					, _nThreadNumber, _nResultCount, dElapsedSec, _nResultCount / dElapsedSec);
+			System.out.format("# COMPLETE(%d) : %d, %d Rows(%d), Sec: %.0f,  %.1f rows/sec\n"
+					, _nThreadNumber
+					, _nTargetCount,  _nResultCount, (_nTargetCount - _nResultCount)
+					, dElapsedSec, _nResultCount / dElapsedSec);
 //			_nTotalRows = _nTotalRows + _nRows;
 			_migInfo.addTotalRows(_nResultCount);
 			oStmtS.close();
