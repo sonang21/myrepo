@@ -71,8 +71,12 @@ public class ObjectList {
      */
 	@FXML
 	private void initialize() {
+		checkWorkingDir();
+	}
+	
+	private void checkWorkingDir() {
 		_sTempDir = _sWorkingDir + "tmp\\";
-		_sBackupDir = _sWorkingDir + "bakup\\";
+		_sBackupDir = _sWorkingDir + "backup\\";
 		
 		File file = new File(_sTempDir);  // ddl 저장 위치 와 하위에 임시 파일 생성 디렉토리를 구성한다.
 		if(!file.exists()) {
@@ -142,8 +146,11 @@ public class ObjectList {
                 "Excel files (*.xls;*.xlsx)", "*.xls;*.xlsx");
         fileChooser.getExtensionFilters().add(extFilter);
         //fileChooser.setInitialDirectory(new File("C:\\Temp\\"));
-        fileChooser.setInitialDirectory(new File(_sExcelPath));
-        fileChooser.setInitialFileName(_sExcelFile);
+        File path = new File(_sExcelPath);
+        if(path.exists()) {
+        	fileChooser.setInitialDirectory(path);
+            fileChooser.setInitialFileName(_sExcelFile);
+        }
         
         // File Dialog를 보여준다.
         _file = fileChooser.showOpenDialog(_mainApp.getPrimaryStage());
@@ -469,7 +476,7 @@ public class ObjectList {
     }
 
     private void getObjectSourceAll() {
-    	
+    	checkWorkingDir();
     	ObservableList<RowData> rows = _tvObjectList.getSelectionModel().getSelectedItems();
     	int index = _viewManager.getColumnIndex("선택");
     	if(rows.size() <= 1) {
@@ -484,12 +491,14 @@ public class ObjectList {
 				String sObjType  = row.getValueString("중분류");
 				String sObjName  = row.getValueString("오브젝트명");
 				String sDBMS     = row.getValueString("DBMS");
-				String[] sConnNames = new String[2];
-				String[] sSchemas   = new String[2];
 				String[][] sText      = {{"",""},{"",""}};
 //				String[] sSuffix    = {"src", "tgt"};
+				
+				String[] sConnNames = new String[2];
 				sConnNames[0] = row.getValueString("SOURCE");
 				sConnNames[1] = row.getValueString("TARGET");
+
+				String[] sSchemas   = new String[2];
 				sSchemas[0]   = row.getValueString("SCHEMA");
 				sSchemas[1]   = row.getValueString("TGT_OWN");
 				
@@ -501,6 +510,7 @@ public class ObjectList {
 						, sObjName
 					));
 				
+				//Collection에 을 DB별로 DBObjectWork 인스턴스 생성하여 추가  
 				for(int i=0; i < sConnNames.length; i++) {
 					if(! dbWorks.containsKey(sConnNames[i])) {
 						DBObjectWork dbWork = new DBObjectWork(sConnNames[i]);
@@ -509,21 +519,23 @@ public class ObjectList {
 				}
 				
 				if(sDBMS.equalsIgnoreCase("ORACLE")) {
-					for(int i=0; i < sConnNames.length; i++) {
+					for(int i=0; i < sConnNames.length; i++) { // Source, Target(백업위해)에 대해서 각각 수행
 						sText[i] = dbWorks.get(sConnNames[i]).getOracleText(sSchemas[i], sObjName, sObjType, true);
 						if(!sText[i][0].equals("1")) sResult = sResult + sConnNames[i] + "(X)";
 					}
 				}
 				else if(sDBMS.equalsIgnoreCase("MS-SQL")) {
-					for(int i=0; i < sConnNames.length; i++) {
+					for(int i=0; i < sConnNames.length; i++) { // Source, Target(백업위해)에 대해서 각각 수행
 						sText[i] = dbWorks.get(sConnNames[i]).getMSSQLText(sSchemas[i], "dbo", sObjName, sObjType, true);
 						if(! sText[i][0].equals("1")) sResult = sResult + sConnNames[i] + "(X)";
 					}
 				}
 				
+				// 스크립트 추출 결과를 파일로 저장
 				for(int i=0; i < sConnNames.length; i++) {
 					try {
 						if(sText[i][0].equals("1")) {
+							//파일명 획득, i==1인 경우 Target Script로 백업에 저장
 							String sFileS = getFileName(sObjType, sObjName, sConnNames[i], (i==1));
 							FileOutputStream outputS = new FileOutputStream(sFileS);
 							BufferedWriter writerS  = new BufferedWriter(new OutputStreamWriter(outputS, "UTF-8"));
@@ -553,6 +565,8 @@ public class ObjectList {
     }
 
     private void getObjectSource() {
+    	checkWorkingDir();
+    	
     	RowData rowData = _tvObjectList.getSelectionModel().getSelectedItem();
 	
 		String sDBType = rowData.getValueString("DBMS");
@@ -678,6 +692,8 @@ public class ObjectList {
     
     
     private void showDiffWindow(boolean bForceView) {
+    	checkWorkingDir();
+    	
     	RowData rowData = _tvObjectList.getSelectionModel().getSelectedItem();
 	
 		String sDBType = rowData.getValueString("DBMS");
@@ -807,7 +823,7 @@ public class ObjectList {
     	if(rows.size() <= 1) {
     		rows = (ObservableList<RowData>)_tvObjectList.getItems();
     	}
-		rows.forEach(row -> row.setValueString(index, "-"));
+		rows.forEach(row -> {row.setValueString(index, "-"); row.setValueBoolean(index-1, null);});
     	_tvObjectList.refresh();
     }
     
@@ -884,6 +900,8 @@ public class ObjectList {
     }
     
     private void compareAllObjects() {
+    	checkWorkingDir();
+    	
     	ObservableList<RowData> rows = _tvObjectList.getSelectionModel().getSelectedItems();
     	int index = _viewManager.getColumnIndex("선택");
     	if(rows.size() <= 1) {

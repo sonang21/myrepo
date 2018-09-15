@@ -75,7 +75,7 @@ public class DBObjectWork {
 		} catch (Exception e) {
 			// TODO: handle exception
 			sResult[0] = "-1";
-			sResult[1] = e.getMessage();
+			sResult[1] = "" + e.getMessage();
 			e.printStackTrace();
 		}
 		return sResult;
@@ -124,7 +124,7 @@ public class DBObjectWork {
 							                  , fmt.format(oRs.getTimestamp(9).getTime())
 							                  , oRs.getString(1));
 					sResult[1] = sResult[1] + String.format("IF OBJECT_ID('%s.%s','%s') IS NOT NULL \r\n    DROP %s %s.%s; \r\nGO\r\n"
-							                   , sOwner, sObjectName, oRs.getString(6)
+							                   , sOwner, sObjectName, oRs.getString(6).trim()
 							                   , sObjectType, sOwner, sObjectName
 							                  );
 					sResult[1] = sResult[1] + oRs.getString(5);
@@ -144,7 +144,7 @@ public class DBObjectWork {
 		} catch (Exception e) {
 			// TODO: handle exception
 			sResult[0] = "-1";
-			sResult[1] = e.getMessage();
+			sResult[1] = "" + e.getMessage();
 			e.printStackTrace();
 		}
 		return sResult;

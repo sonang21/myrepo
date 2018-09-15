@@ -43,8 +43,8 @@ public class MSSQLBulkCopy extends Thread {
 	private static int _nWorkingCount = 0;
 	private int _nThreadNumber = 0;
 
-	private static int _nBatchSize = 125; //5000;
-	private static int _nFetchSize = 125; //5000;
+	private static int  _nBatchSize = 125; //5000;
+	private static int  _nFetchSize = 125; //5000;
 	private static long _nTotalRows = 0; //500000;
 	private long        _nRows = 0;
 	
